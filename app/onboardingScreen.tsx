@@ -1,4 +1,4 @@
-import BackgroundCircles from "@/components/ui/BackgroundCircles";
+import BackgroundStars from "@/components/ui/BackgroundStars";
 import { FeatureHighlightCard, FeatureHighlightCardProps } from "@/components/ui/FeatureHighlightCard";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useRouter } from "expo-router";
@@ -34,7 +34,7 @@ export default function OnboardingScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background-dark">
       <StatusBar style="light" />
-      <BackgroundCircles />
+      <BackgroundStars />
 
       <ScrollView
         className="flex-1"

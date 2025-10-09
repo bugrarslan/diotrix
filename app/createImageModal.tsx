@@ -1,13 +1,296 @@
-import React from 'react'
-import { Text } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import BackgroundStars from "@/components/ui/BackgroundStars";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { useRouter } from "expo-router";
+import { useMemo, useState } from "react";
+import {
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-const createImageModal = () => {
+type AspectRatio = {
+  id: string;
+  label: string;
+  description: string;
+};
+
+type StylePreset = {
+  id: string;
+  name: string;
+  tagline: string;
+};
+
+type GuidancePreset = {
+  id: string;
+  label: string;
+  value: number;
+  description: string;
+};
+
+const aspectRatios: AspectRatio[] = [
+  { id: "square", label: "1 : 1", description: "Balanced for social and gallery tiles." },
+  { id: "portrait", label: "3 : 4", description: "Ideal for posters, covers, and portraits." },
+  { id: "landscape", label: "16 : 9", description: "Perfect for cinematic vistas." },
+];
+
+const stylePresets: StylePreset[] = [
+  { id: "realistic", name: "Realistic", tagline: "Photographic clarity with subtle lighting." },
+  { id: "digital", name: "Digital art", tagline: "Bold colors, stylized textures, concept art ready." },
+  { id: "watercolor", name: "Watercolor", tagline: "Soft gradients and dreamlike washes." },
+];
+
+const guidancePresets: GuidancePreset[] = [
+  { id: "low", label: "Gentle", value: 4.5, description: "Loose interpretation for inventive results." },
+  { id: "medium", label: "Balanced", value: 7, description: "Great mix of fidelity and creative drift." },
+  { id: "high", label: "Precise", value: 9, description: "Laser-focused on your prompt details." },
+];
+
+export default function CreateImageModal() {
+  const router = useRouter();
+  const [prompt, setPrompt] = useState("");
+  const [negativePrompt, setNegativePrompt] = useState("");
+  const [selectedAspect, setSelectedAspect] = useState<AspectRatio["id"]>("portrait");
+  const [selectedStyle, setSelectedStyle] = useState<StylePreset["id"]>("digital");
+  const [selectedGuidance, setSelectedGuidance] = useState<GuidancePreset["id"]>("medium");
+  const [seed, setSeed] = useState<string>("");
+
+  const currentGuidance = useMemo(
+    () => guidancePresets.find((item) => item.id === selectedGuidance) ?? guidancePresets[1],
+    [selectedGuidance]
+  );
+
+  const currentStyle = useMemo(
+    () => stylePresets.find((preset) => preset.id === selectedStyle) ?? stylePresets[1],
+    [selectedStyle]
+  );
+
+  const handleClose = () => {
+    router.back();
+  };
+
+  const handleGenerate = () => {
+    router.push("/(tabs)/home");
+  };
+
+  const handleRandomSeed = () => {
+    const random = Math.floor(Math.random() * 10_000).toString();
+    setSeed(random);
+  };
+
   return (
-    <SafeAreaView>
-      <Text>createImageModal</Text>
-    </SafeAreaView>
-  )
-}
+    <SafeAreaView className="flex-1 bg-background-dark">
+      <BackgroundStars />
+      <View className="flex-row items-center justify-between px-6 pt-6">
+        <Pressable
+          onPress={handleClose}
+          className="flex-row items-center gap-2 px-4 py-2 border rounded-full border-white/10 bg-white/5"
+        >
+          <Ionicons name="close" size={16} color="#ffffff" />
+          <Text className="text-xs font-semibold uppercase tracking-[0.2em] text-white/70">
+            Close
+          </Text>
+        </Pressable>
+        <Text className="text-xs font-semibold tracking-[0.35em] text-white/60">
+          PROMPT STUDIO
+        </Text>
+        <View className="w-24" />
+      </View>
 
-export default createImageModal
+      <ScrollView
+        className="flex-1"
+        contentContainerClassName="pb-28"
+        showsVerticalScrollIndicator={false}
+      >
+        <View className="px-6 pt-6">
+          <View className="p-6 border rounded-3xl border-white/10 bg-white/5">
+            <Text className="text-base font-semibold text-white">
+              Bring your vision to life
+            </Text>
+            <Text className="mt-2 text-sm leading-6 text-white/70">
+              Describe the scene, specify the ambience, and Diotrix will orchestrate Gemini to build a masterpiece. Combine guidance scale, aspect ratio, and style to fine-tune the result.
+            </Text>
+
+            <Text className="mt-6 text-xs font-semibold tracking-[0.25em] text-white/50">
+              MAIN PROMPT
+            </Text>
+            <TextInput
+              value={prompt}
+              onChangeText={setPrompt}
+              placeholder="e.g. Ethereal city floating above the clouds, gleaming neon, volumetric lighting"
+              placeholderTextColor="rgba(255,255,255,0.55)"
+              multiline
+              className="mt-2 min-h-[120px] rounded-2xl border border-white/15 bg-white/5 px-4 py-4 text-base text-white"
+            />
+
+            <Text className="mt-6 text-xs font-semibold tracking-[0.25em] text-white/50">
+              NEGATIVE PROMPT
+            </Text>
+            <TextInput
+              value={negativePrompt}
+              onChangeText={setNegativePrompt}
+              placeholder="Details to avoid: low contrast, text artifacts, distorted anatomy"
+              placeholderTextColor="rgba(255,255,255,0.45)"
+              multiline
+              className="mt-2 min-h-[80px] rounded-2xl border border-white/15 bg-white/5 px-4 py-4 text-base text-white"
+            />
+          </View>
+
+          <View className="p-6 mt-8 border rounded-3xl border-white/10 bg-white/5">
+            <Text className="text-base font-semibold text-white">Aspect ratio</Text>
+            <Text className="mt-2 text-sm text-white/70">
+              Choose how your canvas will appear in the local gallery, exports, and sharing.
+            </Text>
+            <View className="mt-4 space-y-3">
+              {aspectRatios.map((ratio) => {
+                const isActive = ratio.id === selectedAspect;
+                return (
+                  <Pressable
+                    key={ratio.id}
+                    onPress={() => setSelectedAspect(ratio.id)}
+                    className={`flex-row items-center justify-between rounded-2xl border px-4 py-4 ${
+                      isActive
+                        ? "border-primary-500 bg-primary-500/20"
+                        : "border-white/10 bg-white/5"
+                    }`}
+                  >
+                    <View>
+                      <Text className="text-sm font-semibold text-white">{ratio.label}</Text>
+                      <Text className="mt-1 text-xs text-white/60">{ratio.description}</Text>
+                    </View>
+                    {isActive && (
+                      <Ionicons name="checkmark-circle" size={20} color="#c4b5fd" />
+                    )}
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+
+          <View className="p-6 mt-8 border rounded-3xl border-white/10 bg-white/5">
+            <Text className="text-base font-semibold text-white">Style presets</Text>
+            <Text className="mt-2 text-sm text-white/70">
+              Swap between curated looks to jump-start mood and palette. Refine further in the prompt.
+            </Text>
+            <View className="mt-4 space-y-3">
+              {stylePresets.map((preset) => {
+                const isActive = preset.id === selectedStyle;
+                return (
+                  <Pressable
+                    key={preset.id}
+                    onPress={() => setSelectedStyle(preset.id)}
+                    className={`rounded-2xl border px-4 py-4 ${
+                      isActive
+                        ? "border-primary-500 bg-primary-500/20"
+                        : "border-white/10 bg-white/5"
+                    }`}
+                  >
+                    <Text className="text-sm font-semibold text-white">{preset.name}</Text>
+                    <Text className="mt-1 text-xs text-white/60">{preset.tagline}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+
+          <View className="p-6 mt-8 border rounded-3xl border-white/10 bg-white/5">
+            <Text className="text-base font-semibold text-white">Guidance scale</Text>
+            <Text className="mt-2 text-sm text-white/70">
+              Steer how closely Gemini follows the prompt. Balanced works for most concepts.
+            </Text>
+            <View className="mt-4 space-y-3">
+              {guidancePresets.map((preset) => {
+                const isActive = preset.id === selectedGuidance;
+                return (
+                  <Pressable
+                    key={preset.id}
+                    onPress={() => setSelectedGuidance(preset.id)}
+                    className={`flex-row items-center justify-between rounded-2xl border px-4 py-4 ${
+                      isActive
+                        ? "border-primary-500 bg-primary-500/20"
+                        : "border-white/10 bg-white/5"
+                    }`}
+                  >
+                    <View>
+                      <Text className="text-sm font-semibold text-white">{preset.label}</Text>
+                      <Text className="mt-1 text-xs text-white/60">{preset.description}</Text>
+                    </View>
+                    <Text className="text-sm font-semibold text-primary-50">
+                      {preset.value.toFixed(1)}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            <View className="p-4 mt-6 border rounded-2xl border-white/10 bg-white/5">
+              <Text className="text-xs font-semibold uppercase tracking-[0.3em] text-white/60">
+                CURRENT SETTINGS
+              </Text>
+              <View className="mt-3 space-y-2">
+                <Text className="text-sm text-white/80">
+                  • Style · <Text className="font-semibold text-white">{currentStyle.name}</Text>
+                </Text>
+                <Text className="text-sm text-white/80">
+                  • Guidance · <Text className="font-semibold text-white">{currentGuidance.label}</Text> ({currentGuidance.value.toFixed(1)})
+                </Text>
+                <Text className="text-sm text-white/80">
+                  • Aspect · <Text className="font-semibold text-white">{aspectRatios.find((ratio) => ratio.id === selectedAspect)?.label ?? "1 : 1"}</Text>
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          <View className="p-6 mt-8 border rounded-3xl border-white/10 bg-white/5">
+            <Text className="text-base font-semibold text-white">Seed & reproducibility</Text>
+            <Text className="mt-2 text-sm text-white/70">
+              Pin a seed to recreate a look later, or leave blank to let Gemini explore new variations.
+            </Text>
+            <View className="flex-row items-center gap-3 mt-4">
+              <TextInput
+                value={seed}
+                onChangeText={setSeed}
+                placeholder="Random"
+                placeholderTextColor="rgba(255,255,255,0.45)"
+                keyboardType="number-pad"
+                className="flex-1 px-4 py-3 text-white border rounded-2xl border-white/15 bg-white/5"
+              />
+              <Pressable
+                onPress={handleRandomSeed}
+                className="px-4 py-3 border rounded-2xl border-primary-500/40 bg-primary-500/15"
+              >
+                <Text className="text-sm font-semibold text-primary-50">Randomize</Text>
+              </Pressable>
+            </View>
+          </View>
+
+          <View className="mt-10 space-y-4">
+            <Pressable
+              onPress={handleGenerate}
+              className="overflow-hidden rounded-full bg-primary-600"
+              accessibilityLabel="Generate image with current prompt"
+            >
+              <View className="flex-row items-center justify-center gap-2 px-6 py-4">
+                <Ionicons name="sparkles" size={18} color="#ffffff" />
+                <Text className="text-base font-semibold text-white">
+                  Generate with Gemini
+                </Text>
+              </View>
+            </Pressable>
+
+            <Pressable
+              onPress={handleClose}
+              className="items-center px-4 py-3 border rounded-full border-white/15 bg-white/5"
+            >
+              <Text className="text-sm font-semibold text-white/70">
+                Save draft & exit
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
