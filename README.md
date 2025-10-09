@@ -120,8 +120,9 @@ diotrix/
 │   ├── index.tsx
 │   ├── (tabs)/
 │   │   ├── home.tsx
-│   │   ├── gallery.tsx
 │   │   └── settings.tsx
+│   ├── image/
+│   │   └── [id].tsx
 │   ├── createImageModal.tsx
 │   ├── promotionScreen.tsx
 │   └── onboardingScreen.tsx
@@ -211,7 +212,6 @@ const handleGenerateImage = async () => {
   tabBarActiveTintColor: Colors.primary,
 }}>
   <Tabs.Screen name="home" options={{ title: 'Create', tabBarIcon: ({ color }) => <Ionicons name="sparkles" color={color} /> }} />
-  <Tabs.Screen name="gallery" options={{ title: 'Gallery', tabBarIcon: ({ color }) => <Ionicons name="images" color={color} /> }} />
   <Tabs.Screen name="settings" options={{ title: 'Settings', tabBarIcon: ({ color }) => <Ionicons name="settings" color={color} /> }} />
 </Tabs>
 ```
@@ -304,8 +304,8 @@ Create `.env` file:
 
 ```env
 EXPO_PUBLIC_GEMINI_API_KEY=your_gemini_key_here
-EXPO_PUBLIC_REVENUECAT_ANDROID_KEY=your_android_key
-EXPO_PUBLIC_REVENUECAT_IOS_KEY=your_ios_key
+EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY=your_android_key
+EXPO_PUBLIC_REVENUECAT_APPLE_API_KEY=your_ios_key
 ```
 
 ### **Running the App**
