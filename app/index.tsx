@@ -9,7 +9,7 @@ export default function Index() {
       <Text className="text-xl font-bold text-blue-500">
         Welcome to Nativewind!
       </Text>
-      <Button title="Click me!" onPress={() => router.replace("/home")} />
+      <Button title="Click me!" onPress={() => router.replace("/onboardingScreen")} />
     </SafeAreaView>
   );
 }
