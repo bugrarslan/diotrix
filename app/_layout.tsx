@@ -4,6 +4,10 @@ import {
   SettingsProvider,
   useSettingsContext,
 } from "@/context/SettingsContext";
+import {
+  SubscriptionProvider,
+  useSubscriptionContext,
+} from "@/context/SubscriptionContext";
 import { Stack, useRouter } from "expo-router";
 import { useEffect, useRef } from "react";
 import { Platform } from "react-native";
@@ -11,33 +15,43 @@ import Purchases from "react-native-purchases";
 
 function RootNavigator() {
   const router = useRouter();
-  const { loading, shouldShowOnboarding, updateSettings } =
+  const { loading: settingsLoading, shouldShowOnboarding, updateSettings, settings } =
     useSettingsContext();
+  const { loading: subscriptionLoading, isPro } = useSubscriptionContext();
   const previousTargetRef = useRef<string | null>(null);
+  const hasConfiguredPurchasesRef = useRef(false);
 
   useEffect(() => {
-    if (loading) {
+    if (hasConfiguredPurchasesRef.current || Platform.OS !== "ios") {
       return;
     }
 
-    if (Platform.OS === "ios") {
-      if (!process.env.EXPO_PUBLIC_REVENUECAT_APPLE_API_KEY) {
-        console.log(
-          "RevenueCat Apple API Key is not set in environment variables."
-        );
-        return;
-      }
-
-      try {
-        Purchases.configure({
-          apiKey: process.env.EXPO_PUBLIC_REVENUECAT_APPLE_API_KEY,
-        });
-      } catch (error) {
-        console.error("Failed to configure Purchases:", error);
-      }
+    if (!process.env.EXPO_PUBLIC_REVENUECAT_APPLE_API_KEY) {
+      console.log("RevenueCat Apple API Key is not set in environment variables.");
+      hasConfiguredPurchasesRef.current = true;
+      return;
     }
 
-    getCustomerInfo();
+    try {
+      Purchases.configure({
+        apiKey: process.env.EXPO_PUBLIC_REVENUECAT_APPLE_API_KEY,
+      });
+      hasConfiguredPurchasesRef.current = true;
+    } catch (error) {
+      console.error("Failed to configure Purchases:", error);
+    }
+  }, []);
+
+  const isTrialVersion = settings?.isTrialVersion ?? true;
+
+  useEffect(() => {
+    if (settingsLoading || subscriptionLoading) {
+      return;
+    }
+
+    if (isPro && isTrialVersion) {
+      void updateSettings({ isTrialVersion: false });
+    }
 
     const targetRoute = shouldShowOnboarding ? "/onboardingScreen" : "/home";
 
@@ -47,22 +61,15 @@ function RootNavigator() {
 
     previousTargetRef.current = targetRoute;
     router.replace(targetRoute);
-  }, [loading, shouldShowOnboarding, router]);
-
-  async function getCustomerInfo() {
-    const customerInfo = await Purchases.getCustomerInfo();
-    const hasProSubscription =
-      typeof customerInfo.entitlements.active["Diotrix Pro"] !== "undefined" ||
-      customerInfo.activeSubscriptions.includes("diotrix_monthly");
-    if (hasProSubscription) {
-      console.log("User has an active Pro subscription.");
-      try {
-        await updateSettings({ isTrialVersion: false });
-      } catch (error) {
-        console.error("[settings] Failed to update Pro status", error);
-      }
-    }
-  }
+  }, [
+    settingsLoading,
+    subscriptionLoading,
+    shouldShowOnboarding,
+    router,
+    isPro,
+    updateSettings,
+    isTrialVersion,
+  ]);
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
@@ -81,7 +88,9 @@ function RootNavigator() {
 export default function RootLayout() {
   return (
     <SettingsProvider>
-      <RootNavigator />
+      <SubscriptionProvider>
+        <RootNavigator />
+      </SubscriptionProvider>
     </SettingsProvider>
   );
 }
