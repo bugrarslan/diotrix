@@ -84,8 +84,6 @@ export default function HomeScreen() {
   const renderGalleryItem = useCallback(
     ({ item }: { item: GalleryImageRecord }) => {
       const aspectRatio = extractAspectRatio(item.metadata?.aspectRatio ?? null);
-      const metadataLabel = formatMetadataLabel(item.metadata);
-      const promptPreview = item.prompt.length > 120 ? `${item.prompt.slice(0, 117)}...` : item.prompt;
 
       return (
         <Pressable
@@ -97,14 +95,6 @@ export default function HomeScreen() {
             style={{ aspectRatio }}
             className="w-full bg-white/10"
           />
-          <View className="gap-2 px-4 py-3">
-            {!!metadataLabel && (
-              <Text className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
-                {metadataLabel}
-              </Text>
-            )}
-            <Text className="text-sm font-semibold text-white">{promptPreview}</Text>
-          </View>
         </Pressable>
       );
     },
@@ -113,7 +103,7 @@ export default function HomeScreen() {
 
   const header = useMemo(
     () => (
-      <View className="px-6 pt-10 pb-6">
+      <View className="pt-10 pb-6">
         <Text className="text-xs font-semibold uppercase tracking-[0.35em] text-white/50">
           Welcome back
         </Text>
@@ -150,7 +140,7 @@ export default function HomeScreen() {
           estimatedItemSize={220}
           numColumns={2}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 24 }}
+          className="px-6 pb-6"
           ListHeaderComponent={header}
           masonry
         />

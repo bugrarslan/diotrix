@@ -252,19 +252,15 @@ export default function CreateImageModal() {
     setIsGenerating(true);
 
     try {
-      const aspectOption = aspectRatios.find((ratio) => ratio.id === selectedAspect) ?? aspectRatios[0];
       const { positive, negative } = buildPrompt({
         prompt,
         negativePrompt,
         style: currentStyle ? { name: currentStyle.name, tagline: currentStyle.tagline } : undefined,
-        extras: [
-          `Aspect ratio ${aspectOption.label}`,
-          `Guidance scale ${currentGuidance.value.toFixed(1)}`,
-          `Resolution ${imageSize}`,
-        ],
+        extras: [`Guidance scale ${currentGuidance.value.toFixed(1)}`],
       });
 
-      const aspectRatioValue = aspectRatioValueMap[selectedAspect];
+  const defaultAspectId = (aspectRatios[0]?.id ?? "1:1") as AspectRatioOption["id"];
+  const aspectRatioValue = aspectRatioValueMap[selectedAspect] ?? aspectRatioValueMap[defaultAspectId];
 
       const result = await generateImage({
         prompt: positive,
@@ -282,7 +278,7 @@ export default function CreateImageModal() {
       const extension = mimeTypeToExtension(asset.mimeType);
 
       const record = await saveGeneratedImage({
-        prompt: positive,
+        prompt: prompt.trim(),
         base64Data: asset.base64Data,
         extension,
         fileName: asset.fileName,
@@ -298,6 +294,7 @@ export default function CreateImageModal() {
             imageSize,
             personGeneration,
             negativePrompt: negative ?? null,
+            guidancePrompt: `Guidance scale ${currentGuidance.value.toFixed(1)}`,
           },
         },
       });
