@@ -52,35 +52,6 @@ export default function HomeScreen() {
     return width / height;
   }, []);
 
-  const formatMetadataLabel = useCallback(
-    (metadata?: { aspectRatio?: string; guidanceScale?: number; model?: string; seed?: number } | null) => {
-      if (!metadata) {
-        return null;
-      }
-
-      const parts: string[] = [];
-
-      if (metadata.aspectRatio) {
-        parts.push(metadata.aspectRatio);
-      }
-
-      if (typeof metadata.guidanceScale === "number") {
-        parts.push(`Guidance ${metadata.guidanceScale}`);
-      }
-
-      if (metadata.model) {
-        parts.push(metadata.model);
-      }
-
-      if (typeof metadata.seed === "number") {
-        parts.push(`Seed ${metadata.seed}`);
-      }
-
-      return parts.length > 0 ? parts.join(" · ") : null;
-    },
-    []
-  );
-
   const renderGalleryItem = useCallback(
     ({ item }: { item: GalleryImageRecord }) => {
       const aspectRatio = extractAspectRatio(item.metadata?.aspectRatio ?? null);
@@ -88,7 +59,7 @@ export default function HomeScreen() {
       return (
         <Pressable
           onPress={() => handleOpenGalleryImage(item.id)}
-          className="mb-3 overflow-hidden border rounded-3xl border-white/10 bg-white/5"
+          className="mx-2 mb-3 overflow-hidden border rounded-3xl border-white/10 bg-white/5"
         >
           <Image
             source={{ uri: item.uri }}
@@ -98,7 +69,7 @@ export default function HomeScreen() {
         </Pressable>
       );
     },
-    [extractAspectRatio, formatMetadataLabel, handleOpenGalleryImage]
+    [extractAspectRatio, handleOpenGalleryImage]
   );
 
   const header = useMemo(
