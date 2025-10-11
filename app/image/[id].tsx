@@ -205,7 +205,7 @@ const ImageScreen = () => {
   return (
     <SafeAreaView className="flex-1 bg-background-dark" edges={["top", "bottom"]}>
       <BackgroundStars />
-      <View className="px-6 pt-6">
+      <View className="flex-row items-center justify-between gap-4 px-6 pt-6">
         <Pressable
           onPress={handleGoBack}
           className="flex-row items-center gap-2 px-4 py-2 border rounded-full border-white/10 bg-white/5"
@@ -213,6 +213,15 @@ const ImageScreen = () => {
           <Ionicons name="chevron-back" size={16} color="#ffffff" />
           <Text className="text-xs font-semibold uppercase tracking-[0.2em] text-white/70">Back</Text>
         </Pressable>
+        {record && (
+          <Text 
+            className="flex-1 text-sm font-medium text-white/80" 
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
+            {record.prompt}
+          </Text>
+        )}
       </View>
 
       {loading ? (
