@@ -18,7 +18,7 @@ export type UpdateSettingsInput = Partial<Omit<StoredSettings, "lastUpdatedAt">>
 export const createDefaultSettings = (): StoredSettings => {
   const now = new Date().toISOString();
   return {
-    theme: "light",
+    theme: "dark",
     aiApiKey: "",
     showOnboarding: true,
     isTrialVersion: true,

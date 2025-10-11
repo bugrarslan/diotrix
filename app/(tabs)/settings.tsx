@@ -5,6 +5,7 @@ import { getThemePalette } from "@/utils/themePalette";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import Constants from "expo-constants";
 import { useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Alert,
@@ -184,12 +185,6 @@ export default function SettingsScreen() {
 
   const quickActions: QuickAction[] = useMemo(
     () => [
-      // {
-      //   icon: "refresh-circle-outline",
-      //   title: "Regenerate limits",
-      //   subtitle: "View today’s remaining free generations and upgrade to Diotrix Pro.",
-      //   onPress: () => router.push("/promotionModal"),
-      // },
       {
         icon: "trash-bin-outline",
         title: "Clear gallery",
@@ -212,6 +207,7 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView className={`flex-1 ${themePalette.background}`}>
+      <StatusBar style={isDarkTheme ? "light" : "dark"} />
       <BackgroundStars />
       <ScrollView
         className="flex-1"

@@ -6,6 +6,7 @@ import { buildPrompt } from "@/utils/buildPrompt";
 import { getThemePalette } from "@/utils/themePalette";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import { useCallback, useMemo, useState } from "react";
 import type { ImageSourcePropType } from "react-native";
 import {
@@ -336,6 +337,7 @@ export default function CreateImageModal() {
 
   return (
     <SafeAreaView className={`flex-1 ${themePalette.background}`}>
+      <StatusBar style={isDarkTheme ? "light" : "dark"} />
       <BackgroundStars />
       <View className="flex-row items-center justify-between px-6 pt-6">
         <Pressable

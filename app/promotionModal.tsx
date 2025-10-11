@@ -1,7 +1,10 @@
 import BackgroundStars from "@/components/ui/BackgroundStars";
+import { useSettingsContext } from "@/context/SettingsContext";
 import { useSubscriptionContext } from "@/context/SubscriptionContext";
+import { getThemePalette } from "@/utils/themePalette";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import { useMemo } from "react";
 import {
   ActivityIndicator,
@@ -29,17 +32,14 @@ const benefitHighlights: BenefitHighlight[] = [
   {
     icon: "sparkles-outline",
     title: "Unlimited generations",
-    description: "Run as many Gemini prompts as you want with priority processing queues.",
-  },
-  {
-    icon: "cloud-upload-outline",
-    title: "Cloud fallback",
-    description: "Sync masterpieces safely and retrieve them across devices when online.",
+    description:
+      "Run as many prompts as you want with priority processing queues.",
   },
   {
     icon: "color-palette-outline",
     title: "Premium style packs",
-    description: "Access evolving collections of cinematic, editorial, and painterly aesthetics.",
+    description:
+      "Access evolving collections of cinematic, editorial, and painterly aesthetics.",
   },
 ];
 
@@ -47,7 +47,7 @@ const planFeatures: PlanFeature[] = [
   {
     label: "Daily Gemini prompts",
     pro: "Unlimited",
-    free: "6",
+    free: "5 prompts",
   },
   {
     label: "Generation priority",
@@ -62,7 +62,7 @@ const planFeatures: PlanFeature[] = [
   {
     label: "Local-first gallery",
     pro: "Unlimited",
-    free: "100 items",
+    free: "10 items",
   },
   {
     label: "API key override",
@@ -73,6 +73,7 @@ const planFeatures: PlanFeature[] = [
 
 export default function PromotionModal() {
   const router = useRouter();
+  const { settings } = useSettingsContext();
   const {
     loading,
     processing,
@@ -82,8 +83,18 @@ export default function PromotionModal() {
     isPro,
   } = useSubscriptionContext();
 
+  const selectedTheme = settings?.theme ?? "light";
+  const isDarkTheme = selectedTheme === "dark";
+  const themePalette = useMemo(
+    () => getThemePalette(selectedTheme),
+    [selectedTheme]
+  );
+
   const hasPackageOption = availablePackages.length > 0;
-  const primaryPackage = useMemo(() => availablePackages[0] ?? null, [availablePackages]);
+  const primaryPackage = useMemo(
+    () => availablePackages[0] ?? null,
+    [availablePackages]
+  );
 
   const handleClose = () => {
     router.back();
@@ -91,13 +102,19 @@ export default function PromotionModal() {
 
   const handlePurchase = async () => {
     if (!primaryPackage) {
-  Alert.alert("Unavailable", "There’s no purchase package available right now.");
+      Alert.alert(
+        "Unavailable",
+        "There’s no purchase package available right now."
+      );
       return;
     }
 
     try {
       await purchasePackage(primaryPackage);
-      Alert.alert("Welcome to Diotrix Pro", "You now have unlimited Gemini generations.");
+      Alert.alert(
+        "Welcome to Diotrix Pro",
+        "You now have unlimited Gemini generations."
+      );
       router.back();
     } catch (error) {
       if (error instanceof Error) {
@@ -119,19 +136,28 @@ export default function PromotionModal() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background-dark">
+    <SafeAreaView className={`flex-1 ${themePalette.background}`}>
+      <StatusBar style={isDarkTheme ? "light" : "dark"} />
       <BackgroundStars />
       <View className="flex-row items-center justify-between px-6 pt-6">
         <Pressable
           onPress={handleClose}
-          className="flex-row items-center gap-2 px-4 py-2 border rounded-full border-white/10 bg-white/5"
+          className={`flex-row items-center gap-2 px-4 py-2 border rounded-full ${themePalette.border} ${themePalette.surface}`}
         >
-          <Ionicons name="close" size={16} color="#ffffff" />
-          <Text className="text-xs font-semibold uppercase tracking-[0.2em] text-white/70">
+          <Ionicons
+            name="close"
+            size={16}
+            color={isDarkTheme ? "#ffffff" : "#0f172a"}
+          />
+          <Text
+            className={`text-xs font-semibold uppercase tracking-[0.2em] ${themePalette.textSecondary}`}
+          >
             Close
           </Text>
         </Pressable>
-        <Text className="text-xs font-semibold tracking-[0.3em] text-white/60">
+        <Text
+          className={`text-xs font-semibold tracking-[0.3em] ${themePalette.textMuted}`}
+        >
           DIOTRIX PRO
         </Text>
         <View className="w-24" />
@@ -147,49 +173,72 @@ export default function PromotionModal() {
             <Text className="text-sm font-semibold uppercase tracking-[0.3em] text-primary-100">
               Upgrade your studio
             </Text>
-            <Text className="mt-3 text-3xl font-semibold text-white">
+            <Text
+              className={`mt-3 text-3xl font-semibold ${themePalette.textPrimary}`}
+            >
               Create without limits
             </Text>
-            <Text className="mt-3 text-sm leading-6 text-white/80">
-              Diotrix Pro unlocks unlimited Gemini generations, exclusive style packs, and priority processing so your ideas keep flowing.
+            <Text
+              className={`mt-3 text-sm leading-6 ${themePalette.textSecondary}`}
+            >
+              Diotrix Pro unlocks unlimited Gemini generations, exclusive style
+              packs, and priority processing so your ideas keep flowing.
             </Text>
 
             {primaryPackage ? (
-              <View className="p-4 mt-6 border rounded-2xl border-white/15 bg-white/10">
-                <Text className="text-xs font-semibold uppercase tracking-[0.35em] text-white/60">
+              <View
+                className={`p-4 mt-6 border rounded-2xl ${themePalette.border} ${themePalette.surface}`}
+              >
+                <Text
+                  className={`text-xs font-semibold uppercase tracking-[0.35em] ${themePalette.textMuted}`}
+                >
                   BEST VALUE
                 </Text>
-                <Text className="mt-3 text-2xl font-semibold text-white">
-                  {primaryPackage.product.priceString} · {primaryPackage.product.title}
+                <Text
+                  className={`mt-3 text-2xl font-semibold ${themePalette.textPrimary}`}
+                >
+                  {primaryPackage.product.priceString} ·{" "}
+                  {primaryPackage.product.title}
                 </Text>
-                <Text className="mt-1 text-sm text-white/70">Cancel anytime · Managed via App Store</Text>
+                <Text className={`mt-1 text-sm ${themePalette.textSecondary}`}>
+                  Cancel anytime · Managed via App Store
+                </Text>
               </View>
             ) : (
-              <View className="p-4 mt-6 border rounded-2xl border-white/15 bg-white/10">
-                <Text className="text-sm font-semibold text-white">
+              <View
+                className={`p-4 mt-6 border rounded-2xl ${themePalette.border} ${themePalette.surface}`}
+              >
+                <Text
+                  className={`text-sm font-semibold ${themePalette.textPrimary}`}
+                >
                   Pro packages are loading
                 </Text>
-                <Text className="mt-1 text-xs text-white/70">
-                  If this takes a while, check your network connection and try again.
+                <Text className={`mt-1 text-xs ${themePalette.textSecondary}`}>
+                  If this takes a while, check your network connection and try
+                  again.
                 </Text>
               </View>
             )}
           </View>
 
-          <View className="mt-8 space-y-4">
+          <View className="gap-3 mt-8 space-y-4">
             {benefitHighlights.map((benefit) => (
               <View
                 key={benefit.title}
-                className="flex-row items-start gap-4 p-5 border rounded-3xl border-white/10 bg-white/5"
+                className={`flex-row items-start gap-4 p-5 border rounded-3xl ${themePalette.border} ${themePalette.card}`}
               >
                 <View className="p-3 rounded-2xl bg-primary-500/15">
                   <Ionicons name={benefit.icon} size={20} color="#c4b5fd" />
                 </View>
                 <View className="flex-1">
-                  <Text className="text-base font-semibold text-white">
+                  <Text
+                    className={`text-base font-semibold ${themePalette.textPrimary}`}
+                  >
                     {benefit.title}
                   </Text>
-                  <Text className="mt-1 text-sm leading-5 text-white/70">
+                  <Text
+                    className={`mt-1 text-sm leading-5 ${themePalette.textSecondary}`}
+                  >
                     {benefit.description}
                   </Text>
                 </View>
@@ -197,29 +246,41 @@ export default function PromotionModal() {
             ))}
           </View>
 
-          <View className="p-6 mt-8 border rounded-3xl border-white/10 bg-white/5">
-            <Text className="text-base font-semibold text-white">
+          <View
+            className={`p-6 mt-8 border rounded-3xl ${themePalette.border} ${themePalette.card}`}
+          >
+            <Text
+              className={`text-base font-semibold ${themePalette.textPrimary}`}
+            >
               Compare plans
             </Text>
-            <View className="mt-4 space-y-3">
+            <View className="gap-3 mt-4 space-y-3">
               {planFeatures.map((feature) => (
                 <View
                   key={feature.label}
-                  className="flex-row items-center gap-4 p-4 border rounded-2xl border-white/10 bg-white/5"
+                  className={`flex-row items-center gap-4 p-4 border rounded-2xl ${themePalette.border} ${themePalette.surface}`}
                 >
                   <View className="flex-1">
-                    <Text className="text-sm font-semibold text-white">
+                    <Text
+                      className={`text-sm font-semibold ${themePalette.textPrimary}`}
+                    >
                       {feature.label}
                     </Text>
-                    <Text className="mt-1 text-xs uppercase tracking-[0.2em] text-white/50">
+                    <Text
+                      className={`mt-1 text-xs uppercase tracking-[0.2em] ${themePalette.textMuted}`}
+                    >
                       Pro · {feature.pro}
                     </Text>
                   </View>
                   <View className="items-end">
-                    <Text className="text-xs uppercase tracking-[0.2em] text-white/40">
+                    <Text
+                      className={`text-xs uppercase tracking-[0.2em] ${themePalette.textMuted}`}
+                    >
                       Free
                     </Text>
-                    <Text className="mt-1 text-sm font-semibold text-white/70">
+                    <Text
+                      className={`mt-1 text-sm font-semibold ${themePalette.textSecondary}`}
+                    >
                       {feature.free}
                     </Text>
                   </View>
@@ -228,50 +289,56 @@ export default function PromotionModal() {
             </View>
           </View>
 
-          <View className="mt-10 space-y-4">
+          <View className="gap-3 mt-10 space-y-4">
             <Pressable
               onPress={handlePurchase}
               disabled={!hasPackageOption || processing || loading || isPro}
               className={`overflow-hidden rounded-full px-6 py-4 ${
                 !hasPackageOption || processing || loading || isPro
-                  ? "bg-white/10"
+                  ? `${themePalette.surface}`
                   : "bg-primary-600"
               }`}
               accessibilityLabel="Upgrade to Diotrix Pro"
             >
-              <View className="flex-row items-center justify-center gap-2">
-                {processing ? (
-                  <ActivityIndicator color="#ffffff" />
-                ) : (
+              {processing ? (
+                <ActivityIndicator color="#c4b5fd" />
+              ) : (
+                <View className="flex-row items-center justify-center gap-2">
                   <Ionicons name="sparkles" size={18} color="#ffffff" />
-                )}
-                <Text className="text-base font-semibold text-white">
-                  {isPro ? "You’re already Pro" : "Upgrade to Diotrix Pro"}
-                </Text>
-              </View>
+                  <Text className="text-base font-semibold text-white">
+                    {isPro ? "You're already Pro" : "Upgrade to Diotrix Pro"}
+                  </Text>
+                </View>
+              )}
             </Pressable>
 
             <Pressable
               onPress={handleRestore}
               disabled={processing}
-              className="items-center px-4 py-3 border rounded-full border-white/15 bg-white/5"
+              className={`items-center px-4 py-3 border rounded-full ${themePalette.border} ${themePalette.surface}`}
             >
-              <Text className="text-sm font-semibold text-white/70">
+              <Text
+                className={`text-sm font-semibold ${themePalette.textSecondary}`}
+              >
                 Restore purchases
               </Text>
             </Pressable>
 
             <Pressable
               onPress={handleClose}
-              className="items-center px-4 py-3 border rounded-full border-white/10 bg-white/5"
+              className={`items-center px-4 py-3 border rounded-full ${themePalette.border} ${themePalette.surface}`}
             >
-              <Text className="text-sm font-semibold text-white/60">
+              <Text
+                className={`text-sm font-semibold ${themePalette.textMuted}`}
+              >
                 Maybe later
               </Text>
             </Pressable>
 
-            <Text className="text-xs text-white/50">
-              Subscriptions auto-renew until cancelled. Manage your plan any time in your App Store settings. Your Gemini API key remains available for custom usage regardless of plan.
+            <Text className={`text-xs ${themePalette.textMuted}`}>
+              Subscriptions auto-renew until cancelled. Manage your plan any
+              time in your App Store settings. Your Gemini API key remains
+              available for custom usage regardless of plan.
             </Text>
           </View>
         </View>

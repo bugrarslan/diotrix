@@ -1,8 +1,11 @@
 import BackgroundStars from "@/components/ui/BackgroundStars";
+import { useSettingsContext } from "@/context/SettingsContext";
 import { useGalleryStorage } from "@/hooks/useGalleryStorage";
 import { getImageRecordById, type ImageRecord } from "@/services/databaseService";
+import { getThemePalette } from "@/utils/themePalette";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -79,6 +82,7 @@ const ImageScreen = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
   const imageId = toNumber(params.id);
+  const { settings } = useSettingsContext();
 
   const [record, setRecord] = useState<ImageRecord | null>(null);
   const [loading, setLoading] = useState(true);
@@ -88,6 +92,10 @@ const ImageScreen = () => {
   const fullscreenScale = useSharedValue(1);
   const fullscreenSavedScale = useSharedValue(1);
   const { deleteImage, saving: gallerySaving } = useGalleryStorage();
+
+  const selectedTheme = settings?.theme ?? "light";
+  const isDarkTheme = selectedTheme === "dark";
+  const themePalette = useMemo(() => getThemePalette(selectedTheme), [selectedTheme]);
 
   useEffect(() => {
     if (!imageId) {
@@ -244,19 +252,20 @@ const ImageScreen = () => {
   }));
 
   return (
-    <SafeAreaView className="flex-1 bg-background-dark" edges={["top", "bottom"]}>
+    <SafeAreaView className={`flex-1 ${themePalette.background}`} edges={["top", "bottom"]}>
+      <StatusBar style={isDarkTheme ? "light" : "dark"} />
       <BackgroundStars />
       <View className="flex-row items-center justify-between gap-4 px-6 pt-6">
         <Pressable
           onPress={handleGoBack}
-          className="flex-row items-center gap-2 px-4 py-2 border rounded-full border-white/10 bg-white/5"
+          className={`flex-row items-center gap-2 px-4 py-2 border rounded-full ${themePalette.border} ${themePalette.surface}`}
         >
-          <Ionicons name="chevron-back" size={16} color="#ffffff" />
-          <Text className="text-xs font-semibold uppercase tracking-[0.2em] text-white/70">Back</Text>
+          <Ionicons name="chevron-back" size={16} color={isDarkTheme ? "#ffffff" : "#0f172a"} />
+          <Text className={`text-xs font-semibold uppercase tracking-[0.2em] ${themePalette.textSecondary}`}>Back</Text>
         </Pressable>
         {record && (
           <Text 
-            className="flex-1 text-sm font-medium text-white/80" 
+            className={`flex-1 text-sm font-medium ${themePalette.textSecondary}`}
             numberOfLines={1}
             ellipsizeMode="tail"
           >
@@ -268,17 +277,17 @@ const ImageScreen = () => {
       {loading ? (
         <View className="items-center justify-center flex-1 gap-3">
           <ActivityIndicator size="small" color="#c4b5fd" />
-          <Text className="text-xs text-white/60">Loading image details…</Text>
+          <Text className={`text-xs ${themePalette.textMuted}`}>Loading image details…</Text>
         </View>
       ) : error ? (
         <View className="items-center justify-center flex-1 px-6 text-center">
-          <Text className="text-base font-semibold text-white">Could not load image.</Text>
-          <Text className="mt-2 text-sm text-white/70">{error.message}</Text>
+          <Text className={`text-base font-semibold ${themePalette.textPrimary}`}>Could not load image.</Text>
+          <Text className={`mt-2 text-sm ${themePalette.textSecondary}`}>{error.message}</Text>
         </View>
       ) : !record ? (
         <View className="items-center justify-center flex-1 px-6 text-center">
-          <Text className="text-base font-semibold text-white">Image not found</Text>
-          <Text className="mt-2 text-sm text-white/70">Head back to the gallery and try again.</Text>
+          <Text className={`text-base font-semibold ${themePalette.textPrimary}`}>Image not found</Text>
+          <Text className={`mt-2 text-sm ${themePalette.textSecondary}`}>Head back to the gallery and try again.</Text>
         </View>
       ) : (
         <ScrollView
@@ -291,43 +300,43 @@ const ImageScreen = () => {
               onPress={handleOpenFullscreen}
               accessibilityRole="imagebutton"
               accessibilityLabel="Open image in fullscreen"
-              className="overflow-hidden border rounded-3xl border-white/10 bg-white/5"
+              className={`overflow-hidden border rounded-3xl ${themePalette.border} ${themePalette.surface}`}
             >
               <Image
                 source={{ uri: record.uri }}
                 style={{ aspectRatio }}
-                className="w-full bg-white/5"
+                className={`w-full ${themePalette.surface}`}
               />
             </Pressable>
           </View>
 
           <View className="px-6 mt-8">
-            <Text className="text-xs font-semibold uppercase tracking-[0.25em] text-white/50">Prompt</Text>
-            <Text className="mt-3 text-base leading-7 text-white">{record.prompt}</Text>
+            <Text className={`text-xs font-semibold uppercase tracking-[0.25em] ${themePalette.textMuted}`}>Prompt</Text>
+            <Text className={`mt-3 text-base leading-7 ${themePalette.textPrimary}`}>{record.prompt}</Text>
           </View>
 
           {negativePrompt && (
             <View className="px-6 mt-6">
-              <Text className="text-xs font-semibold uppercase tracking-[0.25em] text-white/50">
+              <Text className={`text-xs font-semibold uppercase tracking-[0.25em] ${themePalette.textMuted}`}>
                 Negative prompt
               </Text>
-              <Text className="mt-3 text-sm leading-6 text-white/80">{negativePrompt}</Text>
+              <Text className={`mt-3 text-sm leading-6 ${themePalette.textSecondary}`}>{negativePrompt}</Text>
             </View>
           )}
 
           <View className="px-6 mt-8">
-            <Text className="text-xs font-semibold uppercase tracking-[0.25em] text-white/50">Image details</Text>
-            <View className="p-5 mt-4 border rounded-3xl border-white/10 bg-white/5">
+            <Text className={`text-xs font-semibold uppercase tracking-[0.25em] ${themePalette.textMuted}`}>Image details</Text>
+            <View className={`p-5 mt-4 border rounded-3xl ${themePalette.border} ${themePalette.card}`}>
               {detailItems.length === 0 ? (
-                <Text className="text-sm text-white/70">No additional metadata saved for this artwork.</Text>
+                <Text className={`text-sm ${themePalette.textSecondary}`}>No additional metadata saved for this artwork.</Text>
               ) : (
                 <View className="gap-4">
                   {detailItems.map((item) => (
                     <View key={item.label} className="flex-row items-baseline justify-between gap-4">
-                      <Text className="text-xs font-semibold uppercase tracking-[0.2em] text-white/40">
+                      <Text className={`text-xs font-semibold uppercase tracking-[0.2em] ${themePalette.textMuted}`}>
                         {item.label}
                       </Text>
-                      <Text className="flex-1 text-sm font-semibold text-right text-white">{item.value}</Text>
+                      <Text className={`flex-1 text-sm font-semibold text-right ${themePalette.textPrimary}`}>{item.value}</Text>
                     </View>
                   ))}
                 </View>
@@ -350,7 +359,7 @@ const ImageScreen = () => {
               ) : (
                 <Ionicons name="trash" size={18} color="#f87171" />
               )}
-              <Text className="text-sm font-semibold text-red-200">Delete from gallery</Text>
+              <Text className={`text-sm font-semibold ${settings?.theme === "dark" ? "text-red-200" : "text-red-500"}`}>Delete from gallery</Text>
             </Pressable>
           </View>
 
@@ -364,11 +373,11 @@ const ImageScreen = () => {
               <View className="flex-row items-center justify-between px-6 pt-6">
                 <Pressable
                   onPress={handleCloseFullscreen}
-                  className="flex-row items-center gap-2 px-4 py-2 border rounded-full border-white/15 bg-white/5"
+                  className={`flex-row items-center gap-2 px-4 py-2 border rounded-full ${themePalette.border} ${themePalette.surface}`}
                   accessibilityLabel="Close fullscreen image"
                 >
-                  <Ionicons name="close" size={18} color="#ffffff" />
-                  <Text className="text-xs font-semibold uppercase tracking-[0.2em] text-white/70">
+                  <Ionicons name="close" size={18} color={isDarkTheme ? "#ffffff" : "#0f172a"} />
+                  <Text className={`text-xs font-semibold uppercase tracking-[0.2em] ${themePalette.textSecondary}`}>
                     Close
                   </Text>
                 </Pressable>
@@ -386,7 +395,7 @@ const ImageScreen = () => {
                           aspectRatio: aspectRatio || 1,
                         },
                       ]}
-                      className="border rounded-3xl border-white/10 bg-white/5"
+                      className={`border rounded-3xl ${themePalette.border} ${themePalette.surface}`}
                       resizeMode="contain"
                     />
                   </Animated.View>

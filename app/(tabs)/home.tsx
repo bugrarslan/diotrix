@@ -5,6 +5,7 @@ import { getThemePalette } from "@/utils/themePalette";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { FlashList, type FlashListProps } from "@shopify/flash-list";
 import { useFocusEffect, useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import { useCallback, useMemo } from "react";
 import {
   ActivityIndicator,
@@ -119,6 +120,7 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView className={`flex-1 ${themePalette.background}`}>
+      <StatusBar style={isDarkTheme ? "light" : "dark"} />
       <BackgroundStars />
       {galleryLoading ? (
         <View className="items-center justify-center flex-1 gap-3">
