@@ -1,8 +1,11 @@
 import BackgroundStars from "@/components/ui/BackgroundStars";
 import { FeatureHighlightCard, FeatureHighlightCardProps } from "@/components/ui/FeatureHighlightCard";
+import { useSettingsContext } from "@/context/SettingsContext";
+import { getThemePalette } from "@/utils/themePalette";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { useMemo } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -26,14 +29,18 @@ const featureHighlights: FeatureHighlightCardProps[] = [
 
 export default function OnboardingScreen() {
   const router = useRouter();
+  const { settings } = useSettingsContext();
+  const selectedTheme = settings?.theme ?? "light";
+  const isDarkTheme = selectedTheme === "dark";
+  const themePalette = useMemo(() => getThemePalette(selectedTheme), [selectedTheme]);
 
   const handleContinue = () => {
     router.replace("/(tabs)/home");
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-background-dark">
-      <StatusBar style="light" />
+    <SafeAreaView className={`flex-1 ${themePalette.background}`}>
+      <StatusBar style={isDarkTheme ? "light" : "dark"} />
       <BackgroundStars />
 
       <ScrollView
@@ -43,10 +50,10 @@ export default function OnboardingScreen() {
       >
         <View className="px-6 pt-6">
           <View className="items-center">
-            <Text className="mt-6 text-3xl font-semibold text-center text-white">
+            <Text className={`mt-6 text-3xl font-semibold text-center ${themePalette.textPrimary}`}>
               Unleash AI-powered artistry
             </Text>
-            <Text className="mt-3 text-base leading-6 text-center text-white/70">
+            <Text className={`mt-3 text-base leading-6 text-center ${themePalette.textSecondary}`}>
               Diotrix blends Google Gemini, local storage, and a sleek creative suite to bring your imagination to life—on any device, anytime.
             </Text>
           </View>
@@ -77,7 +84,7 @@ export default function OnboardingScreen() {
             >
               <View className="flex-row items-center gap-2">
                 <Ionicons name="trophy" size={16} color="#a855f7" />
-                <Text className="text-sm font-medium text-white/80">
+                <Text className={`text-sm font-medium ${themePalette.textSecondary}`}>
                   Explore Diotrix Pro benefits
                 </Text>
               </View>

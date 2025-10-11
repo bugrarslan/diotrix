@@ -3,6 +3,7 @@ import { useSettingsContext } from "@/context/SettingsContext";
 import { useGalleryStorage } from "@/hooks/useGalleryStorage";
 import { generateImage, InvalidApiKeyError, type AspectRatio as ImagenAspectRatio } from "@/services/aiService";
 import { buildPrompt } from "@/utils/buildPrompt";
+import { getThemePalette } from "@/utils/themePalette";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useRouter } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
@@ -179,6 +180,21 @@ export default function CreateImageModal() {
   const router = useRouter();
   const { saveGeneratedImage, saving: savingImage } = useGalleryStorage();
   const { settings } = useSettingsContext();
+  const selectedTheme = settings?.theme ?? "light";
+  const isDarkTheme = selectedTheme === "dark";
+  const themePalette = useMemo(() => getThemePalette(selectedTheme), [selectedTheme]);
+  const promptPlaceholderColor = useMemo(
+    () => (isDarkTheme ? "rgba(255,255,255,0.55)" : "rgba(15,23,42,0.45)"),
+    [isDarkTheme]
+  );
+  const negativePlaceholderColor = useMemo(
+    () => (isDarkTheme ? "rgba(255,255,255,0.45)" : "rgba(15,23,42,0.35)"),
+    [isDarkTheme]
+  );
+  const mutedIconColor = useMemo(
+    () => (isDarkTheme ? "rgba(248,250,252,0.65)" : "rgba(15,23,42,0.45)"),
+    [isDarkTheme]
+  );
   const [prompt, setPrompt] = useState("");
   const [negativePrompt, setNegativePrompt] = useState("");
   const [selectedAspect, setSelectedAspect] = useState<AspectRatioOption["id"]>("3:4");
@@ -319,19 +335,19 @@ export default function CreateImageModal() {
   ]);
 
   return (
-    <SafeAreaView className="flex-1 bg-background-dark">
+    <SafeAreaView className={`flex-1 ${themePalette.background}`}>
       <BackgroundStars />
       <View className="flex-row items-center justify-between px-6 pt-6">
         <Pressable
           onPress={handleClose}
-          className="flex-row items-center gap-2 px-4 py-2 border rounded-full border-white/10 bg-white/5"
+          className={`flex-row items-center gap-2 px-4 py-2 border rounded-full ${themePalette.border} ${themePalette.surface}`}
         >
-          <Ionicons name="close" size={16} color="#ffffff" />
-          <Text className="text-xs font-semibold uppercase tracking-[0.2em] text-white/70">
+          <Ionicons name="close" size={16} color={isDarkTheme ? "#f8fafc" : "#0f172a"} />
+          <Text className={`text-xs font-semibold uppercase tracking-[0.2em] ${themePalette.textSecondary}`}>
             Close
           </Text>
         </Pressable>
-        <Text className="text-xs font-semibold tracking-[0.35em] text-white/60">
+        <Text className={`text-xs font-semibold tracking-[0.35em] ${themePalette.textMuted}`}>
           PROMPT STUDIO
         </Text>
         <View className="w-24" />
@@ -343,70 +359,70 @@ export default function CreateImageModal() {
         showsVerticalScrollIndicator={false}
       >
         <View className="px-6 pt-6">
-          <View className="p-6 border rounded-3xl border-white/10 bg-white/5">
+          <View className={`p-6 border rounded-3xl ${themePalette.border} ${themePalette.card}`}>
             <Pressable
               onPress={() => toggleSection("prompt")}
               className="flex-row items-center justify-between"
             >
               <View className="flex-1 pr-4">
-                <Text className="text-base font-semibold text-white">Bring your vision to life</Text>
-                <Text className="mt-2 text-sm leading-6 text-white/70">
+                <Text className={`text-base font-semibold ${themePalette.textPrimary}`}>Bring your vision to life</Text>
+                <Text className={`mt-2 text-sm leading-6 ${themePalette.textSecondary}`}>
                   Describe the scene, specify the ambience, and Diotrix will orchestrate Gemini to build a masterpiece. Combine guidance scale, aspect ratio, and style to fine-tune the result.
                 </Text>
               </View>
               <Ionicons
                 name={expandedSections.prompt ? "chevron-up" : "chevron-down"}
                 size={18}
-                color="#ffffff"
+                color={mutedIconColor}
               />
             </Pressable>
 
             {expandedSections.prompt && (
               <View>
-                <Text className="mt-6 text-xs font-semibold tracking-[0.25em] text-white/50">MAIN PROMPT</Text>
+                <Text className={`mt-6 text-xs font-semibold tracking-[0.25em] ${themePalette.textMuted}`}>MAIN PROMPT</Text>
                 <TextInput
                   value={prompt}
                   onChangeText={setPrompt}
                   placeholder="e.g. Ethereal city floating above the clouds, gleaming neon, volumetric lighting"
-                  placeholderTextColor="rgba(255,255,255,0.55)"
+                  placeholderTextColor={promptPlaceholderColor}
                   multiline
-                  className="mt-2 min-h-[120px] rounded-2xl border border-white/15 bg-white/5 px-4 py-4 text-base text-white"
+                  className={`mt-2 min-h-[120px] rounded-2xl border ${themePalette.border} ${themePalette.surface} px-4 py-4 text-base ${themePalette.textPrimary}`}
                 />
 
-                <Text className="mt-6 text-xs font-semibold tracking-[0.25em] text-white/50">
+                <Text className={`mt-6 text-xs font-semibold tracking-[0.25em] ${themePalette.textMuted}`}>
                   NEGATIVE PROMPT
                 </Text>
                 <TextInput
                   value={negativePrompt}
                   onChangeText={setNegativePrompt}
                   placeholder="Details to avoid: low contrast, text artifacts, distorted anatomy"
-                  placeholderTextColor="rgba(255,255,255,0.45)"
+                  placeholderTextColor={negativePlaceholderColor}
                   multiline
-                  className="mt-2 min-h-[80px] rounded-2xl border border-white/15 bg-white/5 px-4 py-4 text-base text-white"
+                  className={`mt-2 min-h-[80px] rounded-2xl border ${themePalette.border} ${themePalette.surface} px-4 py-4 text-base ${themePalette.textPrimary}`}
                 />
               </View>
             )}
           </View>
 
-          <View className="p-6 mt-8 border rounded-3xl border-white/10 bg-white/5">
+          <View className={`p-6 mt-8 border rounded-3xl ${themePalette.border} ${themePalette.card}`}>
             <Pressable
               onPress={() => toggleSection("aspect")}
               className="flex-row items-center justify-between"
             >
               <View className="flex-1 pr-4">
-                <Text className="text-base font-semibold text-white">Aspect ratio</Text>
-                <Text className="mt-2 text-sm text-white/70">
+                <Text className={`text-base font-semibold ${themePalette.textPrimary}`}>Aspect ratio</Text>
+                <Text className={`mt-2 text-sm ${themePalette.textSecondary}`}>
                   Choose how your canvas will appear in the local gallery, exports, and sharing.
                 </Text>
               </View>
               <Ionicons
                 name={expandedSections.aspect ? "chevron-up" : "chevron-down"}
                 size={18}
-                color="#ffffff"
+                color={mutedIconColor}
               />
             </Pressable>
             {expandedSections.aspect && (
-              <View className="flex-row flex-wrap gap-3 mt-4">
+              <View className="flex-row flex-wrap gap-2 mt-4">
                 {aspectRatios.map((ratio) => {
                   const isActive = ratio.id === selectedAspect;
                   return (
@@ -414,11 +430,11 @@ export default function CreateImageModal() {
                       key={ratio.id}
                       onPress={() => setSelectedAspect(ratio.id)}
                       className={`rounded-full border px-4 py-2 ${
-                        isActive ? "border-primary-500 bg-primary-500/30" : "border-white/15 bg-white/10"
+                        isActive ? "border-primary-500 bg-primary-500/30" : `${themePalette.border} ${themePalette.surface}`
                       }`}
                     >
                       {/* <View className="flex-row items-center gap-2"> */}
-                        <Text className="text-sm font-semibold text-white">{ratio.label}</Text>
+                        <Text className={`text-sm font-semibold ${themePalette.textPrimary}`}>{ratio.label}</Text>
                         {/* {isActive && <Ionicons name="checkmark" size={14} color="#c4b5fd" />} */}
                       {/* </View> */}
                       {/* <Text className="mt-1 text-[11px] text-white/60">{ratio.description}</Text> */}
@@ -429,21 +445,21 @@ export default function CreateImageModal() {
             )}
           </View>
 
-          <View className="p-6 mt-8 border rounded-3xl border-white/10 bg-white/5">
+          <View className={`p-6 mt-8 border rounded-3xl ${themePalette.border} ${themePalette.card}`}>
             <Pressable
               onPress={() => toggleSection("style")}
               className="flex-row items-center justify-between"
             >
               <View className="flex-1 pr-4">
-                <Text className="text-base font-semibold text-white">Style presets</Text>
-                <Text className="mt-2 text-sm text-white/70">
+                <Text className={`text-base font-semibold ${themePalette.textPrimary}`}>Style presets</Text>
+                <Text className={`mt-2 text-sm ${themePalette.textSecondary}`}>
                   Swap between curated looks to jump-start mood and palette. Refine further in the prompt.
                 </Text>
               </View>
               <Ionicons
                 name={expandedSections.style ? "chevron-up" : "chevron-down"}
                 size={18}
-                color="#ffffff"
+                color={mutedIconColor}
               />
             </Pressable>
             {expandedSections.style && (
@@ -455,15 +471,15 @@ export default function CreateImageModal() {
                       key={preset.id}
                       onPress={() => setSelectedStyle(preset.id)}
                       className={`w-[30%] items-center rounded-3xl border px-3 py-4 ${
-                        isActive ? "border-primary-500 bg-primary-500/20" : "border-white/10 bg-white/5"
+                        isActive ? "border-primary-500 bg-primary-500/20" : `${themePalette.border} ${themePalette.surface}`
                       }`}
                     >
                       <Image
                         source={preset.icon}
-                        className="border rounded-full h-14 w-14 border-white/10"
+                        className={`border rounded-full h-14 w-14 ${themePalette.border}`}
                         resizeMode="cover"
                       />
-                      <Text className="mt-3 text-sm font-semibold text-center text-white" numberOfLines={2}>
+                      <Text className={`mt-3 text-sm font-semibold text-center ${themePalette.textPrimary}`} numberOfLines={2}>
                         {preset.name}
                       </Text>
                     </Pressable>
@@ -473,26 +489,25 @@ export default function CreateImageModal() {
             )}
           </View>
 
-          <View className="p-6 mt-8 border rounded-3xl border-white/10 bg-white/5">
+          <View className={`p-6 mt-8 border rounded-3xl ${themePalette.border} ${themePalette.card}`}>
             <Pressable
               onPress={() => toggleSection("guidance")}
               className="flex-row items-center justify-between"
             >
               <View className="flex-1 pr-4">
-                <Text className="text-base font-semibold text-white">Guidance scale</Text>
-                <Text className="mt-2 text-sm text-white/70">
+                <Text className={`text-base font-semibold ${themePalette.textPrimary}`}>Guidance scale</Text>
+                <Text className={`mt-2 text-sm ${themePalette.textSecondary}`}>
                   Steer how closely Gemini follows the prompt. Balanced works for most concepts.
                 </Text>
               </View>
               <Ionicons
                 name={expandedSections.guidance ? "chevron-up" : "chevron-down"}
                 size={18}
-                color="#ffffff"
+                color={mutedIconColor}
               />
             </Pressable>
             {expandedSections.guidance && (
-              <View>
-                <View className="mt-4 space-y-3">
+                <View className="gap-3 mt-4 space-y-3">
                   {guidancePresets.map((preset) => {
                     const isActive = preset.id === selectedGuidance;
                     return (
@@ -500,44 +515,42 @@ export default function CreateImageModal() {
                         key={preset.id}
                         onPress={() => setSelectedGuidance(preset.id)}
                         className={`flex-row items-center justify-between rounded-2xl border px-4 py-4 ${
-                          isActive ? "border-primary-500 bg-primary-500/20" : "border-white/10 bg-white/5"
+                          isActive ? "border-primary-500 bg-primary-500/20" : `${themePalette.border} ${themePalette.surface}`
                         }`}
                       >
                         <View>
-                          <Text className="text-sm font-semibold text-white">{preset.label}</Text>
-                          <Text className="mt-1 text-xs text-white/60">{preset.description}</Text>
+                          <Text className={`text-sm font-semibold ${themePalette.textPrimary}`}>{preset.label}</Text>
+                          <Text className={`mt-1 text-xs ${themePalette.textSecondary}`}>{preset.description}</Text>
                         </View>
-                        <Text className="text-sm font-semibold text-primary-50">{preset.value.toFixed(1)}</Text>
+                        <Text className={`text-sm font-semibold ${themePalette.textPrimary}`}>{preset.value.toFixed(1)}</Text>
                       </Pressable>
                     );
                   })}
                 </View>
-
-              </View>
             )}
           </View>
 
-          <View className="p-6 mt-8 border rounded-3xl border-white/10 bg-white/5">
+          <View className={`p-6 mt-8 border rounded-3xl ${themePalette.border} ${themePalette.card}`}>
             <Pressable
               onPress={() => toggleSection("output")}
               className="flex-row items-center justify-between"
             >
               <View className="flex-1 pr-4">
-                <Text className="text-base font-semibold text-white">Output settings</Text>
-                <Text className="mt-2 text-sm text-white/70">
-                  Tune Imagen’s output resolution and whether people can appear in your render.
+                <Text className={`text-base font-semibold ${themePalette.textPrimary}`}>Output settings</Text>
+                <Text className={`mt-2 text-sm ${themePalette.textSecondary}`}>
+                  Tune Imagen&apos;s output resolution and whether people can appear in your render.
                 </Text>
               </View>
               <Ionicons
                 name={expandedSections.output ? "chevron-up" : "chevron-down"}
                 size={18}
-                color="#ffffff"
+                color={mutedIconColor}
               />
             </Pressable>
 
             {expandedSections.output && (
-              <View>
-                <View className="mt-4 space-y-3">
+              <View className="gap-6">
+                <View className="gap-3 mt-4 space-y-3">
                   {imageSizeOptions.map((option) => {
                     const isActive = option.id === imageSize;
                     return (
@@ -545,20 +558,19 @@ export default function CreateImageModal() {
                         key={option.id}
                         onPress={() => setImageSize(option.id)}
                         className={`flex-row items-center justify-between rounded-2xl border px-4 py-4 ${
-                          isActive ? "border-primary-500 bg-primary-500/20" : "border-white/10 bg-white/5"
+                          isActive ? "border-primary-500 bg-primary-500/20" : `${themePalette.border} ${themePalette.surface}`
                         }`}
                       >
                         <View>
-                          <Text className="text-sm font-semibold text-white">{option.label}</Text>
-                          <Text className="mt-1 text-xs text-white/60">{option.description}</Text>
+                          <Text className={`text-sm font-semibold ${themePalette.textPrimary}`}>{option.label}</Text>
+                          <Text className={`mt-1 text-xs ${themePalette.textSecondary}`}>{option.description}</Text>
                         </View>
-                        {isActive && <Ionicons name="checkmark-circle" size={20} color="#c4b5fd" />}
                       </Pressable>
                     );
                   })}
                 </View>
 
-                <View className="mt-5 space-y-3">
+                <View className="gap-3 space-y-3">
                   {personPolicies.map((policy) => {
                     const isActive = policy.id === personGeneration;
                     return (
@@ -566,14 +578,13 @@ export default function CreateImageModal() {
                         key={policy.id}
                         onPress={() => setPersonGeneration(policy.id)}
                         className={`flex-row items-center justify-between rounded-2xl border px-4 py-4 ${
-                          isActive ? "border-primary-500 bg-primary-500/20" : "border-white/10 bg-white/5"
+                          isActive ? "border-primary-500 bg-primary-500/20" : `${themePalette.border} ${themePalette.surface}`
                         }`}
                       >
                         <View>
-                          <Text className="text-sm font-semibold text-white">{policy.label}</Text>
-                          <Text className="mt-1 text-xs text-white/60">{policy.description}</Text>
+                          <Text className={`text-sm font-semibold ${themePalette.textPrimary}`}>{policy.label}</Text>
+                          <Text className={`mt-1 text-xs ${themePalette.textSecondary}`}>{policy.description}</Text>
                         </View>
-                        {isActive && <Ionicons name="checkmark-circle" size={20} color="#c4b5fd" />}
                       </Pressable>
                     );
                   })}
@@ -609,15 +620,6 @@ export default function CreateImageModal() {
                   {isGenerating || savingImage ? "Generating…" : "Generate with Imagen"}
                 </Text>
               </View>
-            </Pressable>
-
-            <Pressable
-              onPress={handleClose}
-              className="items-center px-4 py-3 border rounded-full border-white/15 bg-white/5"
-            >
-              <Text className="text-sm font-semibold text-white/70">
-                Save draft & exit
-              </Text>
             </Pressable>
           </View>
         </View>

@@ -1,6 +1,7 @@
 import BackgroundStars from "@/components/ui/BackgroundStars";
 import { useSettingsContext } from "@/context/SettingsContext";
 import { useGalleryStorage, type GalleryImageRecord } from "@/hooks/useGalleryStorage";
+import { getThemePalette } from "@/utils/themePalette";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { FlashList, type FlashListProps } from "@shopify/flash-list";
 import { useFocusEffect, useRouter } from "expo-router";
@@ -22,29 +23,7 @@ export default function HomeScreen() {
   const selectedTheme = settings?.theme ?? "light";
   const isDarkTheme = selectedTheme === "dark";
 
-  const themePalette = useMemo(
-    () =>
-      isDarkTheme
-        ? {
-            background: "bg-dark-background",
-            surface: "bg-dark-surface",
-            card: "bg-dark-card",
-            border: "border-dark-border",
-            textPrimary: "text-dark-text-primary",
-            textSecondary: "text-dark-text-secondary",
-            textMuted: "text-dark-text-muted",
-          }
-        : {
-            background: "bg-light-background",
-            surface: "bg-light-surface",
-            card: "bg-light-card",
-            border: "border-light-border",
-            textPrimary: "text-light-text-primary",
-            textSecondary: "text-light-text-secondary",
-            textMuted: "text-light-text-muted",
-          },
-    [isDarkTheme]
-  );
+  const themePalette = useMemo(() => getThemePalette(selectedTheme), [selectedTheme]);
 
   const mutedIconColor = useMemo(
     () => (isDarkTheme ? "rgba(255,255,255,0.65)" : "rgba(15,23,42,0.45)"),

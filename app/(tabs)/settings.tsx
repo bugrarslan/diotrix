@@ -1,6 +1,7 @@
 import BackgroundStars from "@/components/ui/BackgroundStars";
 import { useSettingsContext } from "@/context/SettingsContext";
 import { useSubscriptionContext } from "@/context/SubscriptionContext";
+import { getThemePalette } from "@/utils/themePalette";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import Constants from "expo-constants";
 import { useRouter } from "expo-router";
@@ -62,29 +63,7 @@ export default function SettingsScreen() {
   const selectedTheme = settings?.theme ?? "light";
   const isDarkTheme = selectedTheme === "dark";
 
-  const themePalette = useMemo(
-    () =>
-      isDarkTheme
-        ? {
-            background: "bg-dark-background",
-            surface: "bg-dark-surface",
-            card: "bg-dark-card",
-            border: "border-dark-border",
-            textPrimary: "text-dark-text-primary",
-            textSecondary: "text-dark-text-secondary",
-            textMuted: "text-dark-text-muted",
-          }
-        : {
-            background: "bg-light-background",
-            surface: "bg-light-surface",
-            card: "bg-light-card",
-            border: "border-light-border",
-            textPrimary: "text-light-text-primary",
-            textSecondary: "text-light-text-secondary",
-            textMuted: "text-light-text-muted",
-          },
-    [isDarkTheme]
-  );
+  const themePalette = useMemo(() => getThemePalette(selectedTheme), [selectedTheme]);
 
   const switchTrackColors = useMemo(
     () =>
