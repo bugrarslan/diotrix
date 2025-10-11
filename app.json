@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "diotrix",
+    "name": "Diotrix",
     "slug": "diotrix",
-    "version": "1.0.0",
+    "version": "0.7.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "diotrix",
@@ -10,7 +10,10 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.bugrarslan.diotrix"
+      "bundleIdentifier": "com.bugrarslan.diotrix",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -44,6 +47,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "9c8575e6-57be-4aed-8310-001b1f95c639"
+      }
     }
   }
 }

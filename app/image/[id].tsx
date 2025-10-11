@@ -6,11 +6,14 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Image,
+  Modal,
   Pressable,
   ScrollView,
   Text,
   View,
 } from "react-native";
+import { Gesture, GestureDetector, GestureHandlerRootView } from "react-native-gesture-handler";
+import Animated, { useAnimatedStyle, useSharedValue } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const toNumber = (value: string | string[] | undefined): number | null => {
@@ -78,6 +81,9 @@ const ImageScreen = () => {
   const [record, setRecord] = useState<ImageRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [fullscreenVisible, setFullscreenVisible] = useState(false);
+  const fullscreenScale = useSharedValue(1);
+  const fullscreenSavedScale = useSharedValue(1);
 
   useEffect(() => {
     if (!imageId) {
@@ -157,8 +163,47 @@ const ImageScreen = () => {
     record?.metadata?.aspectRatio,
   ]);
 
+  const handleOpenFullscreen = useCallback(() => {
+    if (!record) {
+      return;
+    }
+    setFullscreenVisible(true);
+  }, [record]);
+
+  const handleCloseFullscreen = useCallback(() => {
+    setFullscreenVisible(false);
+    fullscreenScale.value = 1;
+    fullscreenSavedScale.value = 1;
+  }, [fullscreenScale, fullscreenSavedScale]);
+
+  const pinchGesture = useMemo(
+    () =>
+      Gesture.Pinch()
+        .onBegin(() => {
+          fullscreenSavedScale.value = fullscreenScale.value;
+        })
+        .onUpdate((event) => {
+          const nextScale = fullscreenSavedScale.value * event.scale;
+          fullscreenScale.value = Math.min(Math.max(nextScale, 1), 4);
+        })
+        .onEnd(() => {
+          fullscreenSavedScale.value = fullscreenScale.value;
+        })
+        .onFinalize(() => {
+          if (fullscreenScale.value < 1) {
+            fullscreenScale.value = 1;
+            fullscreenSavedScale.value = 1;
+          }
+        }),
+    [fullscreenSavedScale, fullscreenScale]
+  );
+
+  const fullscreenImageStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: fullscreenScale.value }],
+  }));
+
   return (
-    <SafeAreaView className="flex-1 bg-background-dark">
+    <SafeAreaView className="flex-1 bg-background-dark" edges={["top", "bottom"]}>
       <BackgroundStars />
       <View className="px-6 pt-6">
         <Pressable
@@ -192,13 +237,18 @@ const ImageScreen = () => {
           showsVerticalScrollIndicator={false}
         >
           <View className="px-6 mt-6">
-            <View className="overflow-hidden border rounded-3xl border-white/10 bg-white/5">
+            <Pressable
+              onPress={handleOpenFullscreen}
+              accessibilityRole="imagebutton"
+              accessibilityLabel="Open image in fullscreen"
+              className="overflow-hidden border rounded-3xl border-white/10 bg-white/5"
+            >
               <Image
                 source={{ uri: record.uri }}
                 style={{ aspectRatio }}
                 className="w-full bg-white/5"
               />
-            </View>
+            </Pressable>
           </View>
 
           <View className="px-6 mt-8">
@@ -237,6 +287,47 @@ const ImageScreen = () => {
 
         </ScrollView>
       )}
+
+      <Modal visible={fullscreenVisible} transparent animationType="fade" onRequestClose={handleCloseFullscreen}>
+        <GestureHandlerRootView className="flex-1">
+          <View className="flex-1 bg-black/95">
+            <SafeAreaView className="flex-1" edges={["top", "bottom"]}>
+              <View className="flex-row items-center justify-between px-6 pt-6">
+                <Pressable
+                  onPress={handleCloseFullscreen}
+                  className="flex-row items-center gap-2 px-4 py-2 border rounded-full border-white/15 bg-white/5"
+                  accessibilityLabel="Close fullscreen image"
+                >
+                  <Ionicons name="close" size={18} color="#ffffff" />
+                  <Text className="text-xs font-semibold uppercase tracking-[0.2em] text-white/70">
+                    Close
+                  </Text>
+                </Pressable>
+              </View>
+
+              <View className="items-center justify-center flex-1 px-6 pb-10">
+                <GestureDetector gesture={pinchGesture}>
+                  <Animated.View className="w-full">
+                    <Animated.Image
+                      source={{ uri: record?.uri }}
+                      style={[
+                        fullscreenImageStyle,
+                        {
+                          width: "100%",
+                          aspectRatio: aspectRatio || 1,
+                        },
+                      ]}
+                      className="border rounded-3xl border-white/10 bg-white/5"
+                      resizeMode="contain"
+                    />
+                  </Animated.View>
+                </GestureDetector>
+                <Text className="mt-4 text-xs text-white/60">Tap close to return</Text>
+              </View>
+            </SafeAreaView>
+          </View>
+        </GestureHandlerRootView>
+      </Modal>
     </SafeAreaView>
   );
 };
