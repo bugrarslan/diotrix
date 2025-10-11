@@ -1,4 +1,5 @@
 import BackgroundStars from "@/components/ui/BackgroundStars";
+import { useSettingsContext } from "@/context/SettingsContext";
 import { useGalleryStorage, type GalleryImageRecord } from "@/hooks/useGalleryStorage";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { FlashList, type FlashListProps } from "@shopify/flash-list";
@@ -16,7 +17,41 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function HomeScreen() {
   const router = useRouter();
+  const { settings } = useSettingsContext();
   const { images: galleryImages, loading: galleryLoading, hasImages, refresh } = useGalleryStorage();
+  const selectedTheme = settings?.theme ?? "light";
+  const isDarkTheme = selectedTheme === "dark";
+
+  const themePalette = useMemo(
+    () =>
+      isDarkTheme
+        ? {
+            background: "bg-dark-background",
+            surface: "bg-dark-surface",
+            card: "bg-dark-card",
+            border: "border-dark-border",
+            textPrimary: "text-dark-text-primary",
+            textSecondary: "text-dark-text-secondary",
+            textMuted: "text-dark-text-muted",
+          }
+        : {
+            background: "bg-light-background",
+            surface: "bg-light-surface",
+            card: "bg-light-card",
+            border: "border-light-border",
+            textPrimary: "text-light-text-primary",
+            textSecondary: "text-light-text-secondary",
+            textMuted: "text-light-text-muted",
+          },
+    [isDarkTheme]
+  );
+
+  const mutedIconColor = useMemo(
+    () => (isDarkTheme ? "rgba(255,255,255,0.65)" : "rgba(15,23,42,0.45)"),
+    [isDarkTheme]
+  );
+
+  const activityIndicatorColor = isDarkTheme ? "#c4b5fd" : "#7c3aed";
 
   useFocusEffect(
     useCallback(() => {
@@ -65,27 +100,29 @@ export default function HomeScreen() {
       return (
         <Pressable
           onPress={() => handleOpenGalleryImage(item.id)}
-          className="mx-2 mb-3 overflow-hidden border rounded-3xl border-white/10 bg-white/5"
+          className={`mx-2 mb-3 overflow-hidden rounded-3xl border ${themePalette.border} ${themePalette.surface}`}
         >
           <Image
             source={{ uri: item.uri }}
             style={{ aspectRatio }}
-            className="w-full bg-white/10"
+            className={`w-full ${themePalette.surface}`}
           />
         </Pressable>
       );
     },
-    [extractAspectRatio, handleOpenGalleryImage]
+    [extractAspectRatio, handleOpenGalleryImage, themePalette.border, themePalette.surface]
   );
 
   const header = useMemo(
     () => (
       <View className="pt-10 pb-6">
-        <Text className="text-xs font-semibold uppercase tracking-[0.35em] text-white/50">
+        <Text className={`text-xs font-semibold uppercase tracking-[0.35em] ${themePalette.textMuted}`}>
           Welcome back
         </Text>
-        <Text className="mt-2 text-3xl font-semibold text-white">Ready to create?</Text>
-        <Text className="mt-3 text-sm text-white/70">
+        <Text className={`mt-2 text-3xl font-semibold ${themePalette.textPrimary}`}>
+          Ready to create?
+        </Text>
+        <Text className={`mt-3 text-sm ${themePalette.textSecondary}`}>
           Spin up a new Imagen prompt or revisit your latest gallery entries below.
         </Text>
         <Pressable
@@ -98,16 +135,18 @@ export default function HomeScreen() {
         </Pressable>
       </View>
     ),
-    [handleLaunchCreate]
+    [handleLaunchCreate, themePalette.textMuted, themePalette.textPrimary, themePalette.textSecondary]
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-background-dark">
+    <SafeAreaView className={`flex-1 ${themePalette.background}`}>
       <BackgroundStars />
       {galleryLoading ? (
         <View className="items-center justify-center flex-1 gap-3">
-          <ActivityIndicator size="small" color="#c4b5fd" />
-          <Text className="text-xs text-white/60">Loading your gallery…</Text>
+          <ActivityIndicator size="small" color={activityIndicatorColor} />
+          <Text className={`text-xs ${themePalette.textSecondary}`}>
+            Loading your gallery…
+          </Text>
         </View>
       ) : hasImages ? (
         <MasonryFlashList
@@ -129,9 +168,11 @@ export default function HomeScreen() {
         >
           {header}
           <View className="items-center justify-center flex-1 px-6">
-            <Ionicons name="images-outline" size={36} color="rgba(255,255,255,0.65)" />
-            <Text className="mt-6 text-lg font-semibold text-white">Create your first image</Text>
-            <Text className="mt-2 text-sm leading-6 text-center text-white/70">
+            <Ionicons name="images-outline" size={36} color={mutedIconColor} />
+            <Text className={`mt-6 text-lg font-semibold ${themePalette.textPrimary}`}>
+              Create your first image
+            </Text>
+            <Text className={`mt-2 text-sm leading-6 text-center ${themePalette.textSecondary}`}>
               Unlock your personal gallery by generating a fresh concept with Imagen.
             </Text>
             <Pressable
@@ -139,7 +180,9 @@ export default function HomeScreen() {
               className="flex-row items-center gap-2 px-5 py-3 mt-6 border rounded-full border-primary-500/40 bg-primary-500/15"
             >
               <Ionicons name="flash" size={16} color="#c4b5fd" />
-              <Text className="text-sm font-semibold text-primary-100">Create an image</Text>
+              <Text className={`text-sm font-semibold ${themePalette.textPrimary}`}>
+                Create an image
+              </Text>
             </Pressable>
           </View>
         </ScrollView>
