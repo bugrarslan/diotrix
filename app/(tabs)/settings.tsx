@@ -1,6 +1,7 @@
 import BackgroundStars from "@/components/ui/BackgroundStars";
 import { useSettingsContext } from "@/context/SettingsContext";
 import { useSubscriptionContext } from "@/context/SubscriptionContext";
+import { useGalleryStorage } from "@/hooks/useGalleryStorage";
 import { getThemePalette } from "@/utils/themePalette";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import Constants from "expo-constants";
@@ -52,13 +53,14 @@ const SUPPORT_LINKS: SupportLink[] = [
 
 export default function SettingsScreen() {
   const router = useRouter();
-  const { settings, updateSettings, saving: settingsSaving } = useSettingsContext();
+  const { settings, updateSettings, clearSettings, saving: settingsSaving } = useSettingsContext();
   const {
     loading: subscriptionLoading,
     isPro,
     restorePurchases,
     processing: subscriptionProcessing,
   } = useSubscriptionContext();
+  const { clearGallery, saving: gallerySaving } = useGalleryStorage();
   const [apiKeyInput, setApiKeyInput] = useState(settings?.aiApiKey ?? "");
   const [showKey, setShowKey] = useState(false);
   const selectedTheme = settings?.theme ?? "light";
@@ -104,7 +106,21 @@ export default function SettingsScreen() {
     Linking.openURL(href);
   }, []);
 
+  const handlePerformClearGallery = useCallback(async () => {
+    try {
+      await clearGallery();
+      Alert.alert("Gallery cleared", "Your gallery is now empty.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to clear gallery.";
+      Alert.alert("Clear failed", message);
+    }
+  }, [clearGallery]);
+
   const handleClearGallery = useCallback(() => {
+    if (gallerySaving) {
+      return;
+    }
+
     Alert.alert(
       "Clear gallery?",
       "This removes every generated image and its metadata from local storage.",
@@ -113,13 +129,39 @@ export default function SettingsScreen() {
         {
           text: "Clear",
           style: "destructive",
-          onPress: () => Alert.alert("Gallery cleared", "Your gallery is now empty."),
+          onPress: () => {
+            void handlePerformClearGallery();
+          },
         },
       ]
     );
-  }, []);
+  }, [gallerySaving, handlePerformClearGallery]);
+
+  const handlePerformResetApp = useCallback(async () => {
+    try {
+      await Promise.all([clearGallery(), clearSettings()]);
+      Alert.alert(
+        "Reset complete",
+        "All settings and gallery data have been cleared. The app will restart to default state.",
+        [
+          {
+            text: "OK",
+            onPress: () => {
+            },
+          },
+        ]
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to reset app.";
+      Alert.alert("Reset failed", message);
+    }
+  }, [clearGallery, clearSettings, router]);
 
   const handleResetApp = useCallback(() => {
+    if (gallerySaving || settingsSaving) {
+      return;
+    }
+
     Alert.alert(
       "Reset Diotrix?",
       "We'll erase preferences, API keys, and cache to restore default settings.",
@@ -128,11 +170,13 @@ export default function SettingsScreen() {
         {
           text: "Reset",
           style: "destructive",
-          onPress: () => Alert.alert("Reset complete", "Restart the app to finalize the reset."),
+          onPress: () => {
+            void handlePerformResetApp();
+          },
         },
       ]
     );
-  }, []);
+  }, [gallerySaving, settingsSaving, handlePerformResetApp]);
 
   const handleSaveApiKey = useCallback(async () => {
     try {

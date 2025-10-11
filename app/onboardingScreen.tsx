@@ -13,7 +13,7 @@ const featureHighlights: FeatureHighlightCardProps[] = [
   {
     icon: "color-palette-outline",
     title: "Gemini-powered artistry",
-    description: "Transform simple prompts into gallery-ready visuals with Google Gemini's image intelligence.",
+    description: "Transform simple prompts into gallery-ready visuals with image intelligence.",
   },
   {
     icon: "images-outline",
@@ -29,13 +29,18 @@ const featureHighlights: FeatureHighlightCardProps[] = [
 
 export default function OnboardingScreen() {
   const router = useRouter();
-  const { settings } = useSettingsContext();
+  const { settings, updateSettings } = useSettingsContext();
   const selectedTheme = settings?.theme ?? "light";
   const isDarkTheme = selectedTheme === "dark";
   const themePalette = useMemo(() => getThemePalette(selectedTheme), [selectedTheme]);
 
-  const handleContinue = () => {
-    router.replace("/(tabs)/home");
+  const handleContinue = async () => {
+    try {
+      await updateSettings({ showOnboarding: false });
+    } catch (error) {
+      // If settings update fails, still navigate but log the error
+      console.error("Failed to update onboarding status:", error);
+    }
   };
 
   return (

@@ -143,7 +143,7 @@ export default function HomeScreen() {
         />
       ) : (
         <ScrollView
-          className="flex-1"
+          className="flex-1 px-6 pb-6"
           contentContainerClassName="flex-1 justify-between"
           showsVerticalScrollIndicator={false}
         >
