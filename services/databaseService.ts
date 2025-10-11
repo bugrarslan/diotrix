@@ -18,7 +18,6 @@ export interface ImageMetadata {
   aspectRatio?: string;
   guidanceScale?: number;
   stylePreset?: string;
-  seed?: number;
   model?: string;
   extras?: Record<string, unknown>;
 }

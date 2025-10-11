@@ -1,10 +1,12 @@
 import BackgroundStars from "@/components/ui/BackgroundStars";
+import { useGalleryStorage } from "@/hooks/useGalleryStorage";
 import { getImageRecordById, type ImageRecord } from "@/services/databaseService";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Image,
   Modal,
   Pressable,
@@ -82,8 +84,10 @@ const ImageScreen = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [fullscreenVisible, setFullscreenVisible] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const fullscreenScale = useSharedValue(1);
   const fullscreenSavedScale = useSharedValue(1);
+  const { deleteImage, saving: gallerySaving } = useGalleryStorage();
 
   useEffect(() => {
     if (!imageId) {
@@ -143,7 +147,6 @@ const ImageScreen = () => {
       { label: "Model", value: summarizeValue(record.metadata?.model) },
       { label: "Resolution", value: summarizeValue(extras?.imageSize) },
       { label: "Person Policy", value: summarizeValue(extras?.personGeneration) },
-      { label: "Seed", value: summarizeValue(record.metadata?.seed) },
       { label: "Created", value: formatDateTime(record.createdAt) },
     ];
 
@@ -175,6 +178,44 @@ const ImageScreen = () => {
     fullscreenScale.value = 1;
     fullscreenSavedScale.value = 1;
   }, [fullscreenScale, fullscreenSavedScale]);
+
+  const handlePerformDelete = useCallback(async () => {
+    if (!record) {
+      return;
+    }
+
+    try {
+      setDeleting(true);
+      await deleteImage(record.id);
+      router.replace("/(tabs)/home");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to delete image.";
+      Alert.alert("Delete failed", message);
+    } finally {
+      setDeleting(false);
+    }
+  }, [deleteImage, record, router]);
+
+  const handleDeleteImage = useCallback(() => {
+    if (!record || deleting || gallerySaving) {
+      return;
+    }
+
+    Alert.alert(
+      "Delete this image?",
+      "This will remove the artwork from your gallery permanently.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => {
+            void handlePerformDelete();
+          },
+        },
+      ]
+    );
+  }, [deleting, gallerySaving, handlePerformDelete, record]);
 
   const pinchGesture = useMemo(
     () =>
@@ -294,6 +335,25 @@ const ImageScreen = () => {
             </View>
           </View>
 
+          <View className="px-6 mt-10">
+            <Pressable
+              onPress={handleDeleteImage}
+              disabled={deleting || gallerySaving}
+              className={`flex-row items-center justify-center gap-2 rounded-full border border-red-400/40 bg-red-500/15 px-5 py-4 ${
+                deleting || gallerySaving ? "opacity-60" : ""
+              }`}
+              accessibilityRole="button"
+              accessibilityLabel="Delete this image"
+            >
+              {(deleting || gallerySaving) ? (
+                <ActivityIndicator size="small" color="#fecaca" />
+              ) : (
+                <Ionicons name="trash" size={18} color="#f87171" />
+              )}
+              <Text className="text-sm font-semibold text-red-200">Delete from gallery</Text>
+            </Pressable>
+          </View>
+
         </ScrollView>
       )}
 
@@ -331,7 +391,6 @@ const ImageScreen = () => {
                     />
                   </Animated.View>
                 </GestureDetector>
-                <Text className="mt-4 text-xs text-white/60">Tap close to return</Text>
               </View>
             </SafeAreaView>
           </View>

@@ -41,7 +41,7 @@ type GuidancePreset = {
 type ImageSizeOption = "1K" | "2K";
 type PersonGenerationOption = "dont_allow" | "allow_adult";
 
-const accordionSections = ["prompt", "aspect", "style", "guidance", "output", "seed"] as const;
+const accordionSections = ["prompt", "aspect", "style", "guidance", "output"] as const;
 type AccordionSection = (typeof accordionSections)[number];
 
 const aspectRatios: AspectRatioOption[] = [
@@ -184,7 +184,6 @@ export default function CreateImageModal() {
   const [selectedAspect, setSelectedAspect] = useState<AspectRatioOption["id"]>("3:4");
   const [selectedStyle, setSelectedStyle] = useState<StylePreset["id"]>("anime");
   const [selectedGuidance, setSelectedGuidance] = useState<GuidancePreset["id"]>("medium");
-  const [seed, setSeed] = useState<string>("");
   const [imageSize, setImageSize] = useState<ImageSizeOption>("1K");
   const [personGeneration, setPersonGeneration] = useState<PersonGenerationOption>("allow_adult");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -195,7 +194,6 @@ export default function CreateImageModal() {
     style: false,
     guidance: false,
     output: false,
-    seed: false,
   });
 
   const currentGuidance = useMemo(
@@ -240,14 +238,6 @@ export default function CreateImageModal() {
       return;
     }
 
-    const sanitizedSeed = seed.trim();
-    const numericSeed = sanitizedSeed.length > 0 ? Number.parseInt(sanitizedSeed, 10) : undefined;
-    if (sanitizedSeed.length > 0 && !Number.isFinite(numericSeed)) {
-      setErrorMessage("Seed must be a numeric value.");
-      Alert.alert("Invalid seed", "Please enter numbers only for the seed value.");
-      return;
-    }
-
     setErrorMessage(null);
     setIsGenerating(true);
 
@@ -267,7 +257,6 @@ export default function CreateImageModal() {
         negativePrompt: negative,
         aspectRatio: aspectRatioValue,
         guidanceScale: currentGuidance.value,
-        seed: numericSeed,
         numberOfImages: 1,
         imageSize,
         personGeneration,
@@ -286,7 +275,6 @@ export default function CreateImageModal() {
           aspectRatio: aspectRatioValue,
           guidanceScale: currentGuidance.value,
           model: result.metadata.model,
-          seed: result.metadata.seed ?? numericSeed,
           extras: {
             styleId: currentStyle?.id ?? null,
             styleName: currentStyle?.name ?? null,
@@ -325,16 +313,10 @@ export default function CreateImageModal() {
     prompt,
     router,
     saveGeneratedImage,
-    seed,
     selectedAspect,
     settings?.aiApiKey,
     savingImage,
   ]);
-
-  const handleRandomSeed = () => {
-    const random = Math.floor(Math.random() * 10_000).toString();
-    setSeed(random);
-  };
 
   return (
     <SafeAreaView className="flex-1 bg-background-dark">
@@ -596,43 +578,6 @@ export default function CreateImageModal() {
                     );
                   })}
                 </View>
-              </View>
-            )}
-          </View>
-
-          <View className="p-6 mt-8 border rounded-3xl border-white/10 bg-white/5">
-            <Pressable
-              onPress={() => toggleSection("seed")}
-              className="flex-row items-center justify-between"
-            >
-              <View className="flex-1 pr-4">
-                <Text className="text-base font-semibold text-white">Seed & reproducibility</Text>
-                <Text className="mt-2 text-sm text-white/70">
-                  Pin a seed to recreate a look later, or leave blank to let Gemini explore new variations.
-                </Text>
-              </View>
-              <Ionicons
-                name={expandedSections.seed ? "chevron-up" : "chevron-down"}
-                size={18}
-                color="#ffffff"
-              />
-            </Pressable>
-            {expandedSections.seed && (
-              <View className="flex-row items-center gap-3 mt-4">
-                <TextInput
-                  value={seed}
-                  onChangeText={setSeed}
-                  placeholder="Random"
-                  placeholderTextColor="rgba(255,255,255,0.45)"
-                  keyboardType="number-pad"
-                  className="flex-1 px-4 py-3 text-white border rounded-2xl border-white/15 bg-white/5"
-                />
-                <Pressable
-                  onPress={handleRandomSeed}
-                  className="px-4 py-3 border rounded-2xl border-primary-500/40 bg-primary-500/15"
-                >
-                  <Text className="text-sm font-semibold text-primary-50">Randomize</Text>
-                </Pressable>
               </View>
             )}
           </View>

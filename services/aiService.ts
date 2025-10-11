@@ -10,7 +10,6 @@ export interface ImageGenerationMetadata {
   aspectRatio: AspectRatio;
   numberOfImages: number;
   guidanceScale?: number;
-  seed?: number;
   model: string;
   imageSize?: "1K" | "2K";
   personGeneration?: "dont_allow" | "allow_adult";
@@ -20,7 +19,6 @@ export interface GeneratedImageAsset {
   base64Data: string;
   mimeType: string;
   fileName: string;
-  seed?: number;
 }
 
 export interface GenerateImageResult {
@@ -34,7 +32,6 @@ export interface GenerateImageOptions {
   aspectRatio?: AspectRatio;
   guidanceScale?: number;
   candidateCount?: number;
-  seed?: number;
   outputMimeType?: "image/png" | "image/jpeg" | "image/webp";
   apiKey?: string | null;
   numberOfImages?: number;
@@ -55,7 +52,6 @@ type ImagenImagePayload = {
   content?: { base64Data?: string };
   mimeType?: string;
   fileName?: string;
-  seed?: number;
 };
 
 type ImagenGenerateResponse = {
@@ -148,13 +144,11 @@ const toGeneratedAsset = (
   }
 
   const mimeType = item?.mimeType ?? fallbackMimeType;
-  const seedValue = typeof item?.seed === "number" ? item?.seed : undefined;
   const fileName = item?.fileName ?? `diotrix-${Date.now()}-${index}`;
 
   return {
     base64Data: resolvedBase64,
     mimeType,
-    seed: seedValue,
     fileName,
   };
 };
@@ -166,7 +160,6 @@ export const generateImage = async (options: GenerateImageOptions): Promise<Gene
     aspectRatio = "1:1",
     guidanceScale,
     candidateCount = 1,
-    seed,
     outputMimeType = "image/png",
     apiKey,
     numberOfImages,
@@ -191,7 +184,6 @@ export const generateImage = async (options: GenerateImageOptions): Promise<Gene
       numberOfImages: resolvedNumberOfImages,
       aspectRatio,
       guidanceScale,
-      seed,
       outputMimeType,
       imageSize,
       personGeneration,
@@ -209,7 +201,6 @@ export const generateImage = async (options: GenerateImageOptions): Promise<Gene
       generatedImages: (sdkResponse.generatedImages ?? []).map((generated) => ({
         image: generated.image,
         mimeType: (generated as { mimeType?: string }).mimeType,
-        seed: (generated as { seed?: number }).seed,
       })),
     };
   } catch (error) {
@@ -241,7 +232,6 @@ export const generateImage = async (options: GenerateImageOptions): Promise<Gene
       negativePrompt,
       aspectRatio,
       guidanceScale,
-      seed,
       numberOfImages: resolvedNumberOfImages,
       model: MODEL_NAME,
       imageSize,
