@@ -1,7 +1,10 @@
 import BackgroundStars from "@/components/ui/BackgroundStars";
+import { useSettingsContext } from "@/context/SettingsContext";
+import { useSubscriptionContext } from "@/context/SubscriptionContext";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import Constants from "expo-constants";
 import { useRouter } from "expo-router";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Alert,
   Linking,
@@ -47,18 +50,70 @@ const SUPPORT_LINKS: SupportLink[] = [
 
 export default function SettingsScreen() {
   const router = useRouter();
-  const [apiKey, setApiKey] = useState("");
+  const { settings, updateSettings, saving: settingsSaving } = useSettingsContext();
+  const {
+    loading: subscriptionLoading,
+    isPro,
+    restorePurchases,
+    processing: subscriptionProcessing,
+  } = useSubscriptionContext();
+  const [apiKeyInput, setApiKeyInput] = useState(settings?.aiApiKey ?? "");
   const [showKey, setShowKey] = useState(false);
-  const [enableNotifications, setEnableNotifications] = useState(true);
-  const [autoSave, setAutoSave] = useState(true);
-  const [theme, setTheme] = useState<"system" | "dark" | "light">("system");
+  const selectedTheme = settings?.theme ?? "light";
+  const isDarkTheme = selectedTheme === "dark";
 
-  const maskedKey = useMemo(() => {
-    if (!apiKey.trim()) return "No key connected";
-    const start = apiKey.slice(0, 6);
-    const end = apiKey.slice(-4);
-    return showKey ? apiKey : `${start}••••${end}`;
-  }, [apiKey, showKey]);
+  const themePalette = useMemo(
+    () =>
+      isDarkTheme
+        ? {
+            background: "bg-dark-background",
+            surface: "bg-dark-surface",
+            card: "bg-dark-card",
+            border: "border-dark-border",
+            textPrimary: "text-dark-text-primary",
+            textSecondary: "text-dark-text-secondary",
+            textMuted: "text-dark-text-muted",
+          }
+        : {
+            background: "bg-light-background",
+            surface: "bg-light-surface",
+            card: "bg-light-card",
+            border: "border-light-border",
+            textPrimary: "text-light-text-primary",
+            textSecondary: "text-light-text-secondary",
+            textMuted: "text-light-text-muted",
+          },
+    [isDarkTheme]
+  );
+
+  const switchTrackColors = useMemo(
+    () =>
+      isDarkTheme
+        ? { false: "rgba(255,255,255,0.25)", true: "rgba(139,92,246,0.4)" }
+        : { false: "rgba(15,23,42,0.18)", true: "rgba(124,58,237,0.35)" },
+    [isDarkTheme]
+  );
+
+  const switchThumbColor = isDarkTheme ? "#a78bfa" : "#7c3aed";
+
+  const placeholderTextColor = useMemo(
+    () => (isDarkTheme ? "rgba(255,255,255,0.6)" : "rgba(15,23,42,0.45)"),
+    [isDarkTheme]
+  );
+
+  const mutedIconColor = useMemo(
+    () => (isDarkTheme ? "rgba(255,255,255,0.65)" : "rgba(15,23,42,0.45)"),
+    [isDarkTheme]
+  );
+
+  useEffect(() => {
+    setApiKeyInput(settings?.aiApiKey ?? "");
+  }, [settings?.aiApiKey]);
+
+  const isApiKeyDirty = useMemo(() => {
+    const stored = settings?.aiApiKey?.trim() ?? "";
+    return apiKeyInput.trim() !== stored;
+  }, [apiKeyInput, settings?.aiApiKey]);
 
   const handleLinkPress = useCallback(async (href: string) => {
     const supported = await Linking.canOpenURL(href);
@@ -99,32 +154,85 @@ export default function SettingsScreen() {
     );
   }, []);
 
+  const handleSaveApiKey = useCallback(async () => {
+    try {
+      await updateSettings({ aiApiKey: apiKeyInput.trim() });
+      Alert.alert("API key saved", "Your Gemini API key is now stored securely.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to save API key.";
+      Alert.alert("Save failed", message);
+    }
+  }, [apiKeyInput, updateSettings]);
+
+  const handleThemeChange = useCallback(
+    async (nextTheme: "light" | "dark") => {
+      try {
+        await updateSettings({ theme: nextTheme });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Could not update theme.";
+        Alert.alert("Update failed", message);
+      }
+    },
+    [updateSettings]
+  );
+
+  const handleRestorePurchases = useCallback(async () => {
+    try {
+      await restorePurchases();
+      Alert.alert("Restored", "Your purchases have been restored.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unable to restore purchases.";
+      Alert.alert("Restore failed", message);
+    }
+  }, [restorePurchases]);
+
+  const subscriptionStatusLabel = useMemo(() => {
+    if (subscriptionLoading) {
+      return "Checking subscription…";
+    }
+    return isPro ? "Diotrix Pro active" : "Free tier";
+  }, [subscriptionLoading, isPro]);
+
+  const subscriptionDescription = useMemo(() => {
+    if (subscriptionLoading) {
+      return "Fetching the latest membership details from RevenueCat.";
+    }
+    if (isPro) {
+      return "Enjoy unlimited prompts, faster queues, and premium style packs.";
+    }
+    return "Upgrade for unlimited prompts plus faster queue times and style packs.";
+  }, [isPro, subscriptionLoading]);
+
   const quickActions: QuickAction[] = useMemo(
     () => [
-      {
-        icon: "refresh-circle-outline",
-        title: "Regenerate limits",
-        subtitle: "View today’s remaining free generations and upgrade to Diotrix Pro.",
-        onPress: () => router.push("/promotionModal"),
-      },
+      // {
+      //   icon: "refresh-circle-outline",
+      //   title: "Regenerate limits",
+      //   subtitle: "View today’s remaining free generations and upgrade to Diotrix Pro.",
+      //   onPress: () => router.push("/promotionModal"),
+      // },
       {
         icon: "trash-bin-outline",
         title: "Clear gallery",
-        subtitle: "Remove all locally saved Gemini outputs from your device.",
+        subtitle: "Remove all locally saved image outputs from your device.",
         onPress: handleClearGallery,
       },
       {
         icon: "sparkles-outline",
         title: "Reset experience",
-        subtitle: "Reset onboarding, preferences, and cached content.",
+        subtitle: "Reset preferences, API keys, and cache to default settings.",
         onPress: handleResetApp,
       },
     ],
-    [handleClearGallery, handleResetApp, router]
+    [handleClearGallery, handleResetApp]
   );
 
+  const appVersion = useMemo(() => {
+    return Constants.expoConfig?.version ?? "1.0.0";
+  }, []);
+
   return (
-    <SafeAreaView className="flex-1 bg-background-dark">
+    <SafeAreaView className={`flex-1 ${themePalette.background}`}>
       <BackgroundStars />
       <ScrollView
         className="flex-1"
@@ -132,234 +240,231 @@ export default function SettingsScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View className="px-6 pt-6">
+          {/* Header */}
           <View className="mb-8">
-            <Text className="text-xs font-semibold tracking-[0.3em] text-white/60">
+            <Text className={`text-xs font-semibold tracking-[0.3em] ${themePalette.textMuted}`}>
               SETTINGS
             </Text>
-            <Text className="mt-3 text-3xl font-semibold text-white">
+            <Text className={`mt-3 text-3xl font-semibold ${themePalette.textPrimary}`}>
               Craft your creative cockpit
             </Text>
-            <Text className="mt-3 text-sm leading-6 text-white/70">
+            <Text className={`mt-3 text-sm leading-6 ${themePalette.textSecondary}`}>
               Personalize Diotrix with your Gemini API key, control storage, and tailor the experience to how you create.
             </Text>
           </View>
 
           <View className="gap-3">
-            <View className="p-6 border rounded-3xl border-white/10 bg-white/5">
-              <View className="flex-row items-center gap-3">
-                <View className="p-3 rounded-2xl bg-primary-500/15">
-                  <Ionicons name="key-outline" size={20} color="#c4b5fd" />
-                </View>
-                <View className="flex-1">
-                  <Text className="text-base font-semibold text-white">
-                    Gemini API key
-                  </Text>
-                  <Text className="mt-1 text-sm text-white/60">
-                    Connect your key for unlimited generation alongside Diotrix Pro benefits.
-                  </Text>
-                </View>
-              </View>
-
-              <Text className="mt-6 text-xs font-semibold tracking-[0.25em] text-white/50">
-                CONNECTED KEY
-              </Text>
-              <View className="flex-row items-center justify-between px-4 py-3 mt-2 border rounded-2xl border-white/10 bg-white/10">
-                <Text className="text-sm font-medium text-white">{maskedKey}</Text>
-                {!!apiKey && (
-                  <Pressable onPress={() => setShowKey((prev) => !prev)}>
-                    <Text className="text-xs font-semibold uppercase text-primary-200">
-                      {showKey ? "Hide" : "Reveal"}
-                    </Text>
-                  </Pressable>
-                )}
-              </View>
-
-              <TextInput
-                value={apiKey}
-                onChangeText={setApiKey}
-                placeholder="Enter or paste your Gemini API key"
-                placeholderTextColor="rgba(255,255,255,0.6)"
-                autoCapitalize="none"
-                autoCorrect={false}
-                className="px-4 py-3 mt-4 text-white border rounded-2xl border-white/15 bg-white/5"
-              />
-
-              <View className="flex-row items-center justify-between mt-4">
-                <Text className="text-xs text-white/60">
-                  Need a key? Visit makersuite.google.com and create a new token.
-                </Text>
-                <Pressable
-                  onPress={() => handleLinkPress("https://makersuite.google.com/app/apikey")}
-                  className="px-3 py-1 border rounded-full border-primary-500/40 bg-primary-500/20"
-                >
-                  <Text className="text-xs font-semibold tracking-wide uppercase text-primary-50">
-                    Get key
-                  </Text>
-                </Pressable>
-              </View>
-            </View>
-
-            <View className="p-6 border rounded-3xl border-white/10 bg-white/5">
+            {/* Subscription status */}
+            <View className={`p-6 rounded-3xl border ${themePalette.border} ${themePalette.card}`}>
               <View className="flex-row items-center gap-3">
                 <View className="p-3 rounded-2xl bg-primary-500/15">
                   <Ionicons name="medal-outline" size={20} color="#c4b5fd" />
                 </View>
                 <View className="flex-1">
-                  <Text className="text-base font-semibold text-white">
+                  <Text className={`text-base font-semibold ${themePalette.textPrimary}`}>
                     Subscription status
                   </Text>
-                  <Text className="mt-1 text-sm text-white/60">
+                  <Text className={`mt-1 text-sm ${themePalette.textSecondary}`}>
                     Unlock unlimited creations with Diotrix Pro or connect your Gemini key for endless play.
                   </Text>
                 </View>
               </View>
 
               <View className="p-4 mt-6 border rounded-2xl border-primary-500/40 bg-primary-500/10">
-                <Text className="text-xs font-semibold tracking-[0.35em] text-primary-100">
-                  TODAY’S GENERATION STATUS
+                <Text className="text-xs font-semibold tracking-[0.35em] text-primary-500">
+                  Today&apos;s generation status
                 </Text>
-                <Text className="mt-3 text-lg font-semibold text-white">
-                  Free tier · 4 of 6 prompts remaining
+                <Text className={`mt-3 text-lg font-semibold ${themePalette.textPrimary}`}>
+                  {subscriptionStatusLabel}
                 </Text>
-                <Text className="mt-1 text-sm text-white/70">
-                  Upgrade for unlimited prompts plus faster queue times and style packs.
+                <Text className={`mt-1 text-sm ${themePalette.textSecondary}`}>
+                  {subscriptionDescription}
                 </Text>
-                <Pressable
-                  className="inline-flex self-start px-4 py-2 mt-4 border rounded-full border-primary-500/40 bg-primary-500/20"
-                  onPress={() => router.push("/promotionModal")}
-                >
-                  <Text className="text-xs font-semibold tracking-wide uppercase text-primary-50">
-                    See pro plans
-                  </Text>
-                </Pressable>
-              </View>
-
-              <View className="mt-6 space-y-4">
                 <View className="flex-row items-center justify-between">
-                  <View>
-                    <Text className="text-sm font-medium text-white">Generation reminders</Text>
-                    <Text className="text-xs text-white/60">
-                      Stay updated when you near your daily limit.
+                  <Pressable
+                    className="inline-flex px-4 py-2 mt-4 border rounded-full border-primary-500/40 bg-primary-500/20"
+                    onPress={() => router.push("/promotionModal")}
+                  >
+                    <Text className={`text-xs font-semibold tracking-wide uppercase ${themePalette.textSecondary}`}>
+                      {isPro ? "Manage subscription" : "See pro plans"}
                     </Text>
-                  </View>
-                  <Switch
-                    value={enableNotifications}
-                    onValueChange={setEnableNotifications}
-                    thumbColor="#8b5cf6"
-                    trackColor={{ false: "rgba(255,255,255,0.2)", true: "rgba(139,92,246,0.3)" }}
-                  />
-                </View>
-
-                <View className="flex-row items-center justify-between">
-                  <View>
-                    <Text className="text-sm font-medium text-white">Auto-save masterpieces</Text>
-                    <Text className="text-xs text-white/60">
-                      Store every output in your gallery for offline access.
+                  </Pressable>
+                  <Pressable
+                    className={`inline-flex px-4 py-2 mt-3 rounded-full border ${themePalette.border} ${themePalette.surface}`}
+                    onPress={handleRestorePurchases}
+                    disabled={subscriptionProcessing}
+                  >
+                    <Text className={`text-xs font-semibold tracking-wide uppercase ${themePalette.textSecondary}`}>
+                      {subscriptionProcessing ? "Restoring…" : "Restore purchases"}
                     </Text>
-                  </View>
-                  <Switch
-                    value={autoSave}
-                    onValueChange={setAutoSave}
-                    thumbColor="#8b5cf6"
-                    trackColor={{ false: "rgba(255,255,255,0.2)", true: "rgba(139,92,246,0.3)" }}
-                  />
+                  </Pressable>
                 </View>
               </View>
             </View>
 
-            <View className="p-6 border rounded-3xl border-white/10 bg-white/5">
+            {/* Gemini API key */}
+            <View className={`p-6 rounded-3xl border ${themePalette.border} ${themePalette.card}`}>
+              <View className="flex-row items-center gap-3">
+                <View className="p-3 rounded-2xl bg-primary-500/15">
+                  <Ionicons name="key-outline" size={20} color="#c4b5fd" />
+                </View>
+                <View className="flex-1">
+                  <Text className={`text-base font-semibold ${themePalette.textPrimary}`}>
+                    Gemini API key
+                  </Text>
+                  <Text className={`mt-1 text-sm ${themePalette.textSecondary}`}>
+                    Connect your key for unlimited generation alongside Diotrix Pro benefits.
+                  </Text>
+                </View>
+              </View>
+
+              <Text className={`mt-6 text-xs font-semibold tracking-[0.25em] ${themePalette.textMuted}`}>
+                CONNECTED KEY
+              </Text>
+              <View className="relative mt-2">
+                <TextInput
+                  value={apiKeyInput}
+                  onChangeText={setApiKeyInput}
+                  placeholder="Enter or paste your Gemini API key"
+                  placeholderTextColor={placeholderTextColor}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  secureTextEntry={!showKey}
+                  className={`px-4 py-3 pr-24 border rounded-2xl ${themePalette.border} ${themePalette.surface} ${themePalette.textPrimary}`}
+                />
+                <Pressable
+                  onPress={() => setShowKey((prev) => !prev)}
+                  className="absolute right-4 top-3"
+                  accessibilityLabel={showKey ? "Hide API key" : "Reveal API key"}
+                >
+                  <Text className="text-xs font-semibold uppercase text-primary-500">
+                    {showKey ? "Hide" : "Reveal"}
+                  </Text>
+                </Pressable>
+              </View>
+
+              <View className="flex-row items-center justify-between mt-4">
+                <Text className={`flex-shrink text-xs ${themePalette.textSecondary}`}>
+                  Need a key? Visit makersuite.google.com and create a new token.
+                </Text>
+                <Pressable
+                  onPress={() => handleLinkPress("https://makersuite.google.com/app/apikey")}
+                  className="px-3 py-1 border rounded-full border-primary-500/40 bg-primary-500/15"
+                >
+                  <Text className={`text-xs font-semibold tracking-wide uppercase ${themePalette.textSecondary}`}>
+                    Get key
+                  </Text>
+                </Pressable>
+              </View>
+
+              <Pressable
+                onPress={handleSaveApiKey}
+                disabled={!isApiKeyDirty || settingsSaving}
+                className={`mt-4 items-center rounded-full border border-primary-500/40 bg-primary-500/20 px-4 py-3 ${
+                  !isApiKeyDirty || settingsSaving ? "opacity-60" : ""
+                }`}
+              >
+                <Text className={`text-xs font-semibold tracking-wide uppercase ${themePalette.textSecondary}`}>
+                  {settingsSaving ? "Saving…" : "Save key"}
+                </Text>
+              </Pressable>
+            </View>
+
+            {/* Theme selection */}
+            <View className={`p-6 rounded-3xl border ${themePalette.border} ${themePalette.card}`}>
               <View className="flex-row items-center gap-3">
                 <View className="p-3 rounded-2xl bg-primary-500/15">
                   <Ionicons name="moon-outline" size={20} color="#c4b5fd" />
                 </View>
                 <View className="flex-1">
-                  <Text className="text-base font-semibold text-white">
+                  <Text className={`text-base font-semibold ${themePalette.textPrimary}`}>
                     Theme & appearance
                   </Text>
-                  <Text className="mt-1 text-sm text-white/60">
-                    Diotrix adapts to your system by default. Override the palette anytime.
+                  <Text className={`mt-1 text-sm ${themePalette.textSecondary}`}>
+                    Choose between light and dark modes to suit your environment.
                   </Text>
                 </View>
               </View>
 
-              <View className="flex-row justify-between mt-6">
-                {(["system", "light", "dark"] as const).map((option) => {
-                  const isActive = theme === option;
-                  return (
-                    <Pressable
-                      key={option}
-                      onPress={() => setTheme(option)}
-                      className={`w-[30%] rounded-2xl border px-4 py-3 ${
-                        isActive
-                          ? "border-primary-500 bg-primary-500/20"
-                          : "border-white/15 bg-transparent"
-                      }`}
-                      accessibilityRole="button"
-                    >
-                      <Text
-                        className={`text-center text-xs font-semibold uppercase tracking-wide ${
-                          isActive ? "text-primary-50" : "text-white/60"
-                        }`}
-                      >
-                        {option}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
+              <View className={`relative px-4 py-4 mt-6 border rounded-2xl ${themePalette.border} ${themePalette.surface}`}>
+                <View className="flex-row items-center justify-between">
+                  <View className="flex-1 mr-4">
+                    <Text className={`text-sm font-semibold ${themePalette.textPrimary}`}>
+                      Dark mode
+                    </Text>
+                    <Text className={`mt-1 text-xs leading-5 ${themePalette.textSecondary}`}>
+                      Toggle between light and dark palettes across the app.
+                    </Text>
+                  </View>
+                  <Switch
+                    value={isDarkTheme}
+                    onValueChange={(value) => handleThemeChange(value ? "dark" : "light")}
+                    thumbColor={switchThumbColor}
+                    trackColor={switchTrackColors}
+                    ios_backgroundColor={switchTrackColors.false}
+                  />
+                </View>
+                
               </View>
             </View>
 
-            <View className="p-6 border rounded-3xl border-white/10 bg-white/5">
-              <Text className="text-sm font-semibold text-white">
+            {/* Quick actions */}
+            <View className={`p-6 rounded-3xl border ${themePalette.border} ${themePalette.card}`}>
+              <Text className={`text-sm font-semibold ${themePalette.textPrimary}`}>
                 Quick actions
               </Text>
-              <View className="mt-4 space-y-3">
+              <View className="gap-3 mt-4 space-y-3">
                 {quickActions.map((action) => (
                   <Pressable
                     key={action.title}
                     onPress={action.onPress}
-                    className="flex-row items-start gap-3 p-4 border rounded-2xl border-white/10 bg-white/5"
+                    className={`flex-row items-start gap-3 p-4 border rounded-2xl ${themePalette.border} ${themePalette.surface}`}
                   >
                     <View className="p-3 rounded-2xl bg-primary-500/15">
                       <Ionicons name={action.icon} size={18} color="#c4b5fd" />
                     </View>
                     <View className="flex-1">
-                      <Text className="text-sm font-semibold text-white">
+                      <Text className={`text-sm font-semibold ${themePalette.textPrimary}`}>
                         {action.title}
                       </Text>
-                      <Text className="mt-1 text-xs text-white/60">{action.subtitle}</Text>
+                      <Text className={`mt-1 text-xs ${themePalette.textSecondary}`}>
+                        {action.subtitle}
+                      </Text>
                     </View>
-                    <Ionicons name="chevron-forward" size={16} color="rgba(255,255,255,0.6)" />
+                    <Ionicons name="chevron-forward" size={16} color={mutedIconColor} />
                   </Pressable>
                 ))}
               </View>
             </View>
 
-            <View className="p-6 mb-6 border rounded-3xl border-white/10 bg-white/5">
-              <Text className="text-sm font-semibold text-white">
+            {/* Support links & app version */}
+            <View className={`p-6 mb-6 rounded-3xl border ${themePalette.border} ${themePalette.card}`}>
+              <Text className={`text-sm font-semibold ${themePalette.textPrimary}`}>
                 Help & support
               </Text>
-              <View className="mt-4 space-y-3">
+              <View className="gap-3 mt-4 space-y-3">
                 {SUPPORT_LINKS.map((link) => (
                   <Pressable
                     key={link.label}
                     onPress={() => handleLinkPress(link.href)}
-                    className="flex-row items-center justify-between px-4 py-3 border rounded-2xl border-white/10 bg-white/5"
+                    className={`flex-row items-center justify-between px-4 py-3 border rounded-2xl ${themePalette.border} ${themePalette.surface}`}
                     accessibilityHint={`Opens ${link.label}`}
                   >
                     <View className="flex-row items-center gap-3">
                       <View className="rounded-2xl bg-primary-500/15 p-2.5">
                         <Ionicons name={link.icon} size={16} color="#c4b5fd" />
                       </View>
-                      <Text className="text-sm font-medium text-white">{link.label}</Text>
+                      <Text className={`text-sm font-medium ${themePalette.textPrimary}`}>
+                        {link.label}
+                      </Text>
                     </View>
-                    <Ionicons name="open-outline" size={18} color="rgba(255,255,255,0.65)" />
+                    <Ionicons name="open-outline" size={18} color={mutedIconColor} />
                   </Pressable>
                 ))}
               </View>
 
-              <Text className="mt-6 text-xs text-white/50">
-                Version 1.0.0 · Crafted with React Native, Expo, NativeWind, and Google Gemini.
+              <Text className={`mt-6 text-xs ${themePalette.textMuted}`}>
+                Version {appVersion}.
               </Text>
             </View>
           </View>

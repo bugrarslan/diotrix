@@ -2,7 +2,7 @@ import BackgroundStars from "@/components/ui/BackgroundStars";
 import { useGalleryStorage, type GalleryImageRecord } from "@/hooks/useGalleryStorage";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { FlashList, type FlashListProps } from "@shopify/flash-list";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useMemo } from "react";
 import {
   ActivityIndicator,
@@ -16,7 +16,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { images: galleryImages, loading: galleryLoading, hasImages } = useGalleryStorage();
+  const { images: galleryImages, loading: galleryLoading, hasImages, refresh } = useGalleryStorage();
+
+  useFocusEffect(
+    useCallback(() => {
+      void refresh();
+    }, [refresh])
+  );
 
   const MasonryFlashList = FlashList as unknown as React.ComponentType<
     FlashListProps<GalleryImageRecord> & { masonry?: boolean; estimatedItemSize?: number }
