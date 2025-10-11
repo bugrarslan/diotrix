@@ -6,9 +6,11 @@ import { buildPrompt } from "@/utils/buildPrompt";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useRouter } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
+import type { ImageSourcePropType } from "react-native";
 import {
   ActivityIndicator,
   Alert,
+  Image,
   Pressable,
   ScrollView,
   Text,
@@ -22,11 +24,11 @@ type AspectRatioOption = {
   label: string;
   description: string;
 };
-
 type StylePreset = {
   id: string;
   name: string;
   tagline: string;
+  icon: ImageSourcePropType;
 };
 
 type GuidancePreset = {
@@ -38,6 +40,9 @@ type GuidancePreset = {
 
 type ImageSizeOption = "1K" | "2K";
 type PersonGenerationOption = "dont_allow" | "allow_adult";
+
+const accordionSections = ["prompt", "aspect", "style", "guidance", "output", "seed"] as const;
+type AccordionSection = (typeof accordionSections)[number];
 
 const aspectRatios: AspectRatioOption[] = [
   { id: "1:1", label: "1 : 1", description: "Balanced for social and gallery tiles." },
@@ -55,10 +60,63 @@ const aspectRatioValueMap: Record<AspectRatioOption["id"], ImagenAspectRatio> = 
   "4:3": "4:3",
 };
 
+const styleIcon = require("@/assets/images/icon.png") as ImageSourcePropType;
+
 const stylePresets: StylePreset[] = [
-  { id: "realistic", name: "Realistic", tagline: "Photographic clarity with subtle lighting." },
-  { id: "digital", name: "Digital art", tagline: "Bold colors, stylized textures, concept art ready." },
-  { id: "watercolor", name: "Watercolor", tagline: "Soft gradients and dreamlike washes." },
+  {
+    id: "cyberpunk",
+    name: "Cyberpunk",
+    tagline: "Neon drenched, high-contrast futurism.",
+    icon: styleIcon,
+  },
+  {
+    id: "anime",
+    name: "Anime",
+    tagline: "Soft shading and expressive line work.",
+    icon: styleIcon,
+  },
+  {
+    id: "dramatic_headshot",
+    name: "Dramatic Headshot",
+    tagline: "Moody portraits with cinematic lighting.",
+    icon: styleIcon,
+  },
+  {
+    id: "coloring_book",
+    name: "Coloring Book",
+    tagline: "Bold outlines ready for print and fill.",
+    icon: styleIcon,
+  },
+  {
+    id: "photo_shoot",
+    name: "Photo Shoot",
+    tagline: "Studio-quality lighting and texture.",
+    icon: styleIcon,
+  },
+  {
+    id: "retro_cartoon",
+    name: "Retro Cartoon",
+    tagline: "Playful palettes with vintage charm.",
+    icon: styleIcon,
+  },
+  {
+    id: "80s_glam",
+    name: "80s Glam",
+    tagline: "Flashy neon and glamorous highlights.",
+    icon: styleIcon,
+  },
+  {
+    id: "art_nouveau",
+    name: "Art Nouveau",
+    tagline: "Ornate patterns with organic flow.",
+    icon: styleIcon,
+  },
+  {
+    id: "synthwave",
+    name: "Synthwave",
+    tagline: "Retro-futuristic gradients and glow.",
+    icon: styleIcon,
+  },
 ];
 
 const guidancePresets: GuidancePreset[] = [
@@ -124,14 +182,14 @@ export default function CreateImageModal() {
   const [prompt, setPrompt] = useState("");
   const [negativePrompt, setNegativePrompt] = useState("");
   const [selectedAspect, setSelectedAspect] = useState<AspectRatioOption["id"]>("3:4");
-  const [selectedStyle, setSelectedStyle] = useState<StylePreset["id"]>("digital");
+  const [selectedStyle, setSelectedStyle] = useState<StylePreset["id"]>("anime");
   const [selectedGuidance, setSelectedGuidance] = useState<GuidancePreset["id"]>("medium");
   const [seed, setSeed] = useState<string>("");
   const [imageSize, setImageSize] = useState<ImageSizeOption>("1K");
   const [personGeneration, setPersonGeneration] = useState<PersonGenerationOption>("allow_adult");
   const [isGenerating, setIsGenerating] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+  const [expandedSections, setExpandedSections] = useState<Record<AccordionSection, boolean>>({
     prompt: true,
     aspect: false,
     style: false,
@@ -154,8 +212,21 @@ export default function CreateImageModal() {
     router.back();
   };
 
-  const toggleSection = useCallback((sectionId: string) => {
-    setExpandedSections((prev) => ({ ...prev, [sectionId]: !prev[sectionId] }));
+  const toggleSection = useCallback((sectionId: AccordionSection) => {
+    setExpandedSections((prev) => {
+      const isCurrentlyOpen = prev[sectionId];
+      const nextState = {} as Record<AccordionSection, boolean>;
+      accordionSections.forEach((key) => {
+        nextState[key] = false;
+      });
+
+      if (isCurrentlyOpen) {
+        return nextState;
+      }
+
+      nextState[sectionId] = true;
+      return nextState;
+    });
   }, []);
 
   const handleGenerate = useCallback(async () => {
@@ -397,19 +468,25 @@ export default function CreateImageModal() {
               />
             </Pressable>
             {expandedSections.style && (
-              <View className="mt-4 space-y-3">
+              <View className="flex-row flex-wrap justify-between mt-4 gap-y-4">
                 {stylePresets.map((preset) => {
                   const isActive = preset.id === selectedStyle;
                   return (
                     <Pressable
                       key={preset.id}
                       onPress={() => setSelectedStyle(preset.id)}
-                      className={`rounded-2xl border px-4 py-4 ${
+                      className={`w-[30%] items-center rounded-3xl border px-3 py-4 ${
                         isActive ? "border-primary-500 bg-primary-500/20" : "border-white/10 bg-white/5"
                       }`}
                     >
-                      <Text className="text-sm font-semibold text-white">{preset.name}</Text>
-                      <Text className="mt-1 text-xs text-white/60">{preset.tagline}</Text>
+                      <Image
+                        source={preset.icon}
+                        className="border rounded-full h-14 w-14 border-white/10"
+                        resizeMode="cover"
+                      />
+                      <Text className="mt-3 text-sm font-semibold text-center text-white" numberOfLines={2}>
+                        {preset.name}
+                      </Text>
                     </Pressable>
                   );
                 })}
@@ -457,22 +534,6 @@ export default function CreateImageModal() {
                   })}
                 </View>
 
-                <View className="p-4 mt-6 border rounded-2xl border-white/10 bg-white/5">
-                  <Text className="text-xs font-semibold uppercase tracking-[0.3em] text-white/60">
-                    CURRENT SETTINGS
-                  </Text>
-                  <View className="mt-3 space-y-2">
-                    <Text className="text-sm text-white/80">
-                      • Style · <Text className="font-semibold text-white">{currentStyle.name}</Text>
-                    </Text>
-                    <Text className="text-sm text-white/80">
-                      • Guidance · <Text className="font-semibold text-white">{currentGuidance.label}</Text> ({currentGuidance.value.toFixed(1)})
-                    </Text>
-                    <Text className="text-sm text-white/80">
-                      • Aspect · <Text className="font-semibold text-white">{aspectRatios.find((ratio) => ratio.id === selectedAspect)?.label ?? "1 : 1"}</Text>
-                    </Text>
-                  </View>
-                </View>
               </View>
             )}
           </View>
