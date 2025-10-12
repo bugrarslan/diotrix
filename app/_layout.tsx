@@ -26,7 +26,7 @@ function RootNavigator() {
       return;
     }
 
-    if (!process.env.EXPO_PUBLIC_REVENUECAT_APPLE_API_KEY) {
+    if (!process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY) {
       console.log("RevenueCat Apple API Key is not set in environment variables.");
       hasConfiguredPurchasesRef.current = true;
       return;
@@ -34,7 +34,7 @@ function RootNavigator() {
 
     try {
       Purchases.configure({
-        apiKey: process.env.EXPO_PUBLIC_REVENUECAT_APPLE_API_KEY,
+        apiKey: process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY,
       });
       hasConfiguredPurchasesRef.current = true;
     } catch (error) {
