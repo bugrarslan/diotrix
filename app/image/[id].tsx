@@ -14,12 +14,14 @@ import {
   Modal,
   Pressable,
   ScrollView,
+  Share,
   Text,
   View,
 } from "react-native";
 import { Gesture, GestureDetector, GestureHandlerRootView } from "react-native-gesture-handler";
 import Animated, { useAnimatedStyle, useSharedValue } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
+import * as MediaLibrary from "expo-media-library";
 
 const toNumber = (value: string | string[] | undefined): number | null => {
   if (!value) {
@@ -89,6 +91,8 @@ const ImageScreen = () => {
   const [error, setError] = useState<Error | null>(null);
   const [fullscreenVisible, setFullscreenVisible] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [savingToDevice, setSavingToDevice] = useState(false);
+  const [sharingImage, setSharingImage] = useState(false);
   const fullscreenScale = useSharedValue(1);
   const fullscreenSavedScale = useSharedValue(1);
   const { deleteImage, saving: gallerySaving } = useGalleryStorage();
@@ -251,6 +255,54 @@ const ImageScreen = () => {
     transform: [{ scale: fullscreenScale.value }],
   }));
 
+  const handleSaveToDevice = useCallback(async () => {
+    if (!record?.uri || savingToDevice) {
+      return;
+    }
+
+    try {
+      setSavingToDevice(true);
+      const permission = await MediaLibrary.requestPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert("Permission needed", "Allow Diotrix to save images to your media library.");
+        return;
+      }
+
+      const asset = await MediaLibrary.createAssetAsync(record.uri);
+      try {
+        await MediaLibrary.createAlbumAsync("Diotrix", asset, false);
+      } catch (albumError) {
+        if (albumError instanceof Error && albumError.message.includes("existing")) {
+          // Album already exists; saving the asset is sufficient.
+        }
+      }
+      Alert.alert("Saved", "Image saved to your photo library.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to save image.";
+      Alert.alert("Save failed", message);
+    } finally {
+      setSavingToDevice(false);
+    }
+  }, [record, savingToDevice]);
+
+  const handleShareImage = useCallback(async () => {
+    if (!record?.uri || sharingImage) {
+      return;
+    }
+
+    try {
+      setSharingImage(true);
+      await Share.share({ url: record.uri });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to share image.";
+      if (message && !message.includes("canceled")) {
+        Alert.alert("Share failed", message);
+      }
+    } finally {
+      setSharingImage(false);
+    }
+  }, [record, sharingImage]);
+
   return (
     <SafeAreaView className={`flex-1 ${themePalette.background}`} edges={["top", "bottom"]}>
       <StatusBar style={isDarkTheme ? "light" : "dark"} />
@@ -400,6 +452,42 @@ const ImageScreen = () => {
                     />
                   </Animated.View>
                 </GestureDetector>
+              </View>
+
+              <View className="flex-row items-center gap-4 px-6 pb-6">
+                <Pressable
+                  onPress={handleSaveToDevice}
+                  disabled={savingToDevice}
+                  className={`flex-1 flex-row items-center justify-center gap-2 rounded-full border px-4 py-3 ${themePalette.border} ${themePalette.surface} ${
+                    savingToDevice ? "opacity-60" : ""
+                  }`}
+                >
+                  {savingToDevice ? (
+                    <ActivityIndicator size="small" color="#c4b5fd" />
+                  ) : (
+                    <Ionicons name="download-outline" size={18} color={isDarkTheme ? "#ffffff" : "#0f172a"} />
+                  )}
+                  <Text
+                    className={`text-sm font-semibold ${themePalette.textSecondary}`}
+                  >
+                    Save to gallery
+                  </Text>
+                </Pressable>
+
+                <Pressable
+                  onPress={handleShareImage}
+                  disabled={sharingImage}
+                  className={`flex-1 flex-row items-center justify-center gap-2 rounded-full bg-primary-600 px-4 py-3 ${
+                    sharingImage ? "opacity-75" : ""
+                  }`}
+                >
+                  {sharingImage ? (
+                    <ActivityIndicator size="small" color="#ffffff" />
+                  ) : (
+                    <Ionicons name="share-outline" size={18} color="#ffffff" />
+                  )}
+                  <Text className="text-sm font-semibold text-white">Share</Text>
+                </Pressable>
               </View>
             </SafeAreaView>
           </View>
