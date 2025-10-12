@@ -348,3 +348,5 @@ eas build --profile production --platform all
 
 Diotrix empowers users to unleash creativity through AI-generated visuals, blending cutting-edge Gemini technology with a sleek, mobile-first experience.
 
+
+test
