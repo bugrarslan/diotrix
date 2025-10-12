@@ -198,11 +198,11 @@ export default function CreateImageModal() {
   );
   const [prompt, setPrompt] = useState("");
   const [negativePrompt, setNegativePrompt] = useState("");
-  const [selectedAspect, setSelectedAspect] = useState<AspectRatioOption["id"]>("3:4");
-  const [selectedStyle, setSelectedStyle] = useState<StylePreset["id"]>("anime");
-  const [selectedGuidance, setSelectedGuidance] = useState<GuidancePreset["id"]>("medium");
-  const [imageSize, setImageSize] = useState<ImageSizeOption>("1K");
-  const [personGeneration, setPersonGeneration] = useState<PersonGenerationOption>("allow_adult");
+  const [selectedAspect, setSelectedAspect] = useState<AspectRatioOption["id"] | null>(null);
+  const [selectedStyle, setSelectedStyle] = useState<StylePreset["id"] | null>(null);
+  const [selectedGuidance, setSelectedGuidance] = useState<GuidancePreset["id"] | null>(null);
+  const [imageSize, setImageSize] = useState<ImageSizeOption | null>(null);
+  const [personGeneration, setPersonGeneration] = useState<PersonGenerationOption | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [expandedSections, setExpandedSections] = useState<Record<AccordionSection, boolean>>({
@@ -212,16 +212,6 @@ export default function CreateImageModal() {
     guidance: false,
     output: false,
   });
-
-  const currentGuidance = useMemo(
-    () => guidancePresets.find((item) => item.id === selectedGuidance) ?? guidancePresets[1],
-    [selectedGuidance]
-  );
-
-  const currentStyle = useMemo(
-    () => stylePresets.find((preset) => preset.id === selectedStyle) ?? stylePresets[1],
-    [selectedStyle]
-  );
 
   const handleClose = () => {
     router.back();
@@ -244,14 +234,43 @@ export default function CreateImageModal() {
     });
   }, []);
 
+  const showValidationError = useCallback((message: string) => {
+    setErrorMessage(message);
+    Alert.alert("Missing info", message);
+  }, []);
+
   const handleGenerate = useCallback(async () => {
     if (isGenerating || savingImage) {
       return;
     }
 
     if (!prompt.trim()) {
-      setErrorMessage("Please describe what you’d like to create before generating.");
-      Alert.alert("Prompt required", "Enter a prompt to guide Imagen before generating.");
+      showValidationError("Please describe what you’d like to create before generating.");
+      return;
+    }
+
+    if (!selectedAspect) {
+      showValidationError("Select an aspect ratio before generating.");
+      return;
+    }
+
+    if (!selectedStyle) {
+      showValidationError("Choose a style preset before generating.");
+      return;
+    }
+
+    if (!selectedGuidance) {
+      showValidationError("Choose a guidance scale before generating.");
+      return;
+    }
+
+    if (!imageSize) {
+      showValidationError("Pick an output size before generating.");
+      return;
+    }
+
+    if (!personGeneration) {
+      showValidationError("Choose a people generation policy before generating.");
       return;
     }
 
@@ -259,21 +278,39 @@ export default function CreateImageModal() {
     setIsGenerating(true);
 
     try {
+      const aspectRatioValue = aspectRatioValueMap[selectedAspect];
+      if (!aspectRatioValue) {
+        showValidationError("Select a valid aspect ratio before generating.");
+        setIsGenerating(false);
+        return;
+      }
+
+      const guidancePreset = guidancePresets.find((item) => item.id === selectedGuidance);
+      if (!guidancePreset) {
+        showValidationError("Choose a valid guidance scale before generating.");
+        setIsGenerating(false);
+        return;
+      }
+
+      const stylePreset = stylePresets.find((preset) => preset.id === selectedStyle);
+      if (!stylePreset) {
+        showValidationError("Choose a valid style preset before generating.");
+        setIsGenerating(false);
+        return;
+      }
+
       const { positive, negative } = buildPrompt({
         prompt,
         negativePrompt,
-        style: currentStyle ? { name: currentStyle.name, tagline: currentStyle.tagline } : undefined,
-        extras: [`Guidance scale ${currentGuidance.value.toFixed(1)}`],
+        style: { name: stylePreset.name, tagline: stylePreset.tagline },
+        extras: [`Guidance scale ${guidancePreset.value.toFixed(1)}`],
       });
-
-  const defaultAspectId = (aspectRatios[0]?.id ?? "1:1") as AspectRatioOption["id"];
-  const aspectRatioValue = aspectRatioValueMap[selectedAspect] ?? aspectRatioValueMap[defaultAspectId];
 
       const result = await generateImage({
         prompt: positive,
         negativePrompt: negative,
         aspectRatio: aspectRatioValue,
-        guidanceScale: currentGuidance.value,
+        guidanceScale: guidancePreset.value,
         numberOfImages: 1,
         imageSize,
         personGeneration,
@@ -290,16 +327,16 @@ export default function CreateImageModal() {
         fileName: asset.fileName,
         metadata: {
           aspectRatio: aspectRatioValue,
-          guidanceScale: currentGuidance.value,
+          guidanceScale: guidancePreset.value,
           model: result.metadata.model,
           extras: {
-            styleId: currentStyle?.id ?? null,
-            styleName: currentStyle?.name ?? null,
-            styleTagline: currentStyle?.tagline ?? null,
+            styleId: stylePreset.id,
+            styleName: stylePreset.name,
+            styleTagline: stylePreset.tagline,
             imageSize,
             personGeneration,
             negativePrompt: negative ?? null,
-            guidancePrompt: `Guidance scale ${currentGuidance.value.toFixed(1)}`,
+            guidancePrompt: `Guidance scale ${guidancePreset.value.toFixed(1)}`,
           },
         },
       });
@@ -321,8 +358,6 @@ export default function CreateImageModal() {
       setIsGenerating(false);
     }
   }, [
-    currentGuidance,
-    currentStyle,
     imageSize,
     isGenerating,
     negativePrompt,
@@ -333,6 +368,9 @@ export default function CreateImageModal() {
     selectedAspect,
     settings?.aiApiKey,
     savingImage,
+    selectedGuidance,
+    selectedStyle,
+    showValidationError,
   ]);
 
   return (
