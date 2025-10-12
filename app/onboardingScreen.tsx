@@ -81,19 +81,19 @@ export default function OnboardingScreen() {
 
   const renderItem = useCallback(
     ({ item }: { item: OnboardingSlide }) => (
-      <View style={{ width: SCREEN_WIDTH }} className="px-6">
-        <View className="justify-between flex-1">
-          <View>
-            <View
-              className={`items-center justify-center rounded-3xl border ${themePalette.border} ${themePalette.surface} px-6 py-10`}
-            >
-              <Image
-                source={item.image}
-                resizeMode="contain"
-                className="w-full h-48"
-              />
-            </View>
-            <Text className={`mt-10 text-xs font-semibold uppercase tracking-[0.35em] ${themePalette.textMuted}`}>
+      <View style={{ width: SCREEN_WIDTH }} className="flex-1 px-6">
+        <View className="flex-1">
+          <View
+            className={`flex-1 overflow-hidden rounded-3xl border ${themePalette.border} ${themePalette.surface}`}
+          >
+            <Image
+              source={item.image}
+              resizeMode="cover"
+              className="w-full h-full"
+            />
+          </View>
+          <View className="pb-10 mt-8">
+            <Text className={`text-xs font-semibold uppercase tracking-[0.35em] ${themePalette.textMuted}`}>
               {item.badge}
             </Text>
             <Text className={`mt-3 text-3xl font-semibold leading-snug ${themePalette.textPrimary}`}>
@@ -124,6 +124,8 @@ export default function OnboardingScreen() {
           renderItem={renderItem}
           horizontal
           pagingEnabled
+          className="flex-1"
+          style={{ flex: 1 }}
           showsHorizontalScrollIndicator={false}
           onViewableItemsChanged={handleViewableItemsChanged}
           viewabilityConfig={viewabilityConfig}
