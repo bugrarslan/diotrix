@@ -1,31 +1,49 @@
 import BackgroundStars from "@/components/ui/BackgroundStars";
-import { FeatureHighlightCard, FeatureHighlightCardProps } from "@/components/ui/FeatureHighlightCard";
 import { useSettingsContext } from "@/context/SettingsContext";
 import { getThemePalette } from "@/utils/themePalette";
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useMemo } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { Dimensions, FlatList, Image, Pressable, Text, View } from "react-native";
+import type { ImageSourcePropType, ViewToken } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const featureHighlights: FeatureHighlightCardProps[] = [
+type OnboardingSlide = {
+  id: string;
+  badge: string;
+  title: string;
+  description: string;
+  image: ImageSourcePropType;
+};
+
+const onboardingSlides: OnboardingSlide[] = [
   {
-    icon: "color-palette-outline",
-    title: "Gemini-powered artistry",
-    description: "Transform simple prompts into gallery-ready visuals with image intelligence.",
+    id: "discover",
+    badge: "IMAGINE",
+    title: "Craft concepts with Gemini",
+    description:
+      "Describe your vision in rich detail and Diotrix will orchestrate Imagen to bring breathtaking scenes to life.",
+    image: require("@/assets/onboard-images/whale.png") as ImageSourcePropType,
   },
   {
-    icon: "images-outline",
-    title: "Curated local gallery",
-    description: "Keep every masterpiece offline with rich metadata, ready to revisit or regenerate.",
+    id: "curate",
+    badge: "CURATE",
+    title: "Build a living gallery",
+    description:
+      "Store every render locally with metadata, styles, and notes so inspiration is always at your fingertips.",
+    image: require("@/assets/onboard-images/city.png") as ImageSourcePropType,
   },
   {
-    icon: "infinite-outline",
-    title: "Freemium flexibility",
-    description: "Use the Diotrix Pro plan or plug in your own API key for limitless creativity.",
+    id: "accelerate",
+    badge: "ACCELERATE",
+    title: "Unlock limitless flow",
+    description:
+      "Upgrade to Diotrix Pro or connect your key for faster queues, premium styles, and endless experimentation.",
+    image: require("@/assets/onboard-images/nebula.png") as ImageSourcePropType,
   },
 ];
+
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 export default function OnboardingScreen() {
   const router = useRouter();
@@ -33,70 +51,135 @@ export default function OnboardingScreen() {
   const selectedTheme = settings?.theme ?? "light";
   const isDarkTheme = selectedTheme === "dark";
   const themePalette = useMemo(() => getThemePalette(selectedTheme), [selectedTheme]);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const listRef = useRef<FlatList<OnboardingSlide>>(null);
 
-  const handleContinue = async () => {
+  const handleContinue = useCallback(async () => {
     try {
       await updateSettings({ showOnboarding: false });
     } catch (error) {
-      // If settings update fails, still navigate but log the error
       console.error("Failed to update onboarding status:", error);
     }
-  };
+  }, [updateSettings]);
+
+  const handleNext = useCallback(() => {
+    const nextIndex = activeIndex + 1;
+    if (nextIndex < onboardingSlides.length) {
+      listRef.current?.scrollToIndex({ index: nextIndex, animated: true });
+    }
+  }, [activeIndex]);
+
+  const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 60 }).current;
+  const handleViewableItemsChanged = useRef(
+    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
+      const firstViewable = viewableItems[0];
+      if (firstViewable?.index != null) {
+        setActiveIndex(firstViewable.index);
+      }
+    }
+  ).current;
+
+  const renderItem = useCallback(
+    ({ item }: { item: OnboardingSlide }) => (
+      <View style={{ width: SCREEN_WIDTH }} className="px-6">
+        <View className="justify-between flex-1">
+          <View>
+            <View
+              className={`items-center justify-center rounded-3xl border ${themePalette.border} ${themePalette.surface} px-6 py-10`}
+            >
+              <Image
+                source={item.image}
+                resizeMode="contain"
+                className="w-full h-48"
+              />
+            </View>
+            <Text className={`mt-10 text-xs font-semibold uppercase tracking-[0.35em] ${themePalette.textMuted}`}>
+              {item.badge}
+            </Text>
+            <Text className={`mt-3 text-3xl font-semibold leading-snug ${themePalette.textPrimary}`}>
+              {item.title}
+            </Text>
+            <Text className={`mt-4 text-base leading-6 ${themePalette.textSecondary}`}>
+              {item.description}
+            </Text>
+          </View>
+        </View>
+      </View>
+    ),
+    [themePalette]
+  );
+
+  const isLastSlide = activeIndex === onboardingSlides.length - 1;
 
   return (
     <SafeAreaView className={`flex-1 ${themePalette.background}`}>
       <StatusBar style={isDarkTheme ? "light" : "dark"} />
       <BackgroundStars />
 
-      <ScrollView
-        className="flex-1"
-        contentContainerClassName="pb-12"
-        showsVerticalScrollIndicator={false}
-      >
-        <View className="px-6 pt-6">
-          <View className="items-center">
-            <Text className={`mt-6 text-3xl font-semibold text-center ${themePalette.textPrimary}`}>
-              Unleash AI-powered artistry
-            </Text>
-            <Text className={`mt-3 text-base leading-6 text-center ${themePalette.textSecondary}`}>
-              Diotrix blends Google Gemini, local storage, and a sleek creative suite to bring your imagination to life—on any device, anytime.
-            </Text>
+      <View className="flex-1 pt-8">
+        <FlatList
+          ref={listRef}
+          data={onboardingSlides}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onViewableItemsChanged={handleViewableItemsChanged}
+          viewabilityConfig={viewabilityConfig}
+          bounces={false}
+        />
+
+        <View className="px-6 pb-8">
+          <View className="flex-row items-center justify-center gap-2">
+            {onboardingSlides.map((slide, index) => {
+              const isActive = index === activeIndex;
+              return (
+                <View
+                  key={slide.id}
+                  className={`h-2 rounded-full ${isActive ? "bg-primary-600" : themePalette.surface}`}
+                  style={{ width: isActive ? 36 : 10, opacity: isActive ? 1 : 0.55 }}
+                />
+              );
+            })}
           </View>
 
-          <View className="gap-3 mt-10 space-y-4">
-            {featureHighlights.map((feature) => (
-              <FeatureHighlightCard key={feature.title} {...feature} />
-            ))}
-          </View>
-
-          <View className="gap-3 mt-12 space-y-4">
-            <Pressable
-              className="overflow-hidden rounded-full"
-              onPress={handleContinue}
-              accessibilityLabel="Start using Diotrix"
-            >
-              <View className="items-center justify-center px-6 py-4 rounded-full bg-primary-600">
-                <Text className="text-base font-semibold text-white">
-                  Start creating with Diotrix
-                </Text>
+          <View className="mt-8">
+            {isLastSlide ? (
+              <Pressable
+                className="overflow-hidden rounded-full bg-primary-600"
+                onPress={handleContinue}
+                accessibilityLabel="Get started with Diotrix"
+              >
+                <View className="items-center justify-center px-6 py-4">
+                  <Text className="text-base font-semibold text-white">Get started</Text>
+                </View>
+              </Pressable>
+            ) : (
+              <View className="flex-row items-center justify-between">
+                <Pressable
+                  onPress={() => router.push("/promotionModal")}
+                  accessibilityLabel="Explore Diotrix Pro"
+                  className={`px-4 py-3 rounded-full border ${themePalette.border} ${themePalette.surface}`}
+                >
+                  <Text className={`text-xs font-semibold uppercase tracking-[0.2em] ${themePalette.textSecondary}`}>
+                    Explore Pro
+                  </Text>
+                </Pressable>
+                <Pressable
+                  className="overflow-hidden rounded-full bg-primary-600"
+                  onPress={handleNext}
+                  accessibilityLabel="Next onboarding slide"
+                >
+                  <View className="px-6 py-4">
+                    <Text className="text-base font-semibold text-white">Next</Text>
+                  </View>
+                </Pressable>
               </View>
-            </Pressable>
-
-            <Pressable
-              className="items-center"
-              onPress={() => router.push("/promotionModal")}
-              accessibilityLabel="View Diotrix Pro benefits"
-            >
-              <View className="flex-row items-center gap-2">
-                <Ionicons name="trophy" size={16} color="#a855f7" />
-                <Text className={`text-sm font-medium ${themePalette.textSecondary}`}>
-                  Explore Diotrix Pro benefits
-                </Text>
-              </View>
-            </Pressable>
+            )}
           </View>
         </View>
-      </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
