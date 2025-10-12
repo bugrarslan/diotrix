@@ -1,5 +1,6 @@
 import BackgroundStars from "@/components/ui/BackgroundStars";
 import { useSettingsContext } from "@/context/SettingsContext";
+import { useSubscriptionContext } from "@/context/SubscriptionContext";
 import { useGalleryStorage } from "@/hooks/useGalleryStorage";
 import { generateImage, InvalidApiKeyError, type AspectRatio as ImagenAspectRatio } from "@/services/aiService";
 import { buildPrompt } from "@/utils/buildPrompt";
@@ -62,62 +63,60 @@ const aspectRatioValueMap: Record<AspectRatioOption["id"], ImagenAspectRatio> = 
   "4:3": "4:3",
 };
 
-const styleIcon = require("@/assets/images/icon.png") as ImageSourcePropType;
-
 const stylePresets: StylePreset[] = [
   {
     id: "cyberpunk",
     name: "Cyberpunk",
     tagline: "Neon drenched, high-contrast futurism.",
-    icon: styleIcon,
+    icon: require("@/assets/style-images/cyberpunk.png"),
   },
   {
     id: "anime",
     name: "Anime",
     tagline: "Soft shading and expressive line work.",
-    icon: styleIcon,
+    icon: require("@/assets/style-images/anime.png"),
   },
   {
     id: "dramatic_headshot",
     name: "Dramatic Headshot",
     tagline: "Moody portraits with cinematic lighting.",
-    icon: styleIcon,
+    icon: require("@/assets/style-images/dramatic-headshot.png"),
   },
   {
     id: "coloring_book",
     name: "Coloring Book",
     tagline: "Bold outlines ready for print and fill.",
-    icon: styleIcon,
+    icon: require("@/assets/style-images/coloring-book.png"),
   },
   {
     id: "photo_shoot",
     name: "Photo Shoot",
     tagline: "Studio-quality lighting and texture.",
-    icon: styleIcon,
+    icon: require("@/assets/style-images/photo-shoot.png"),
   },
   {
     id: "retro_cartoon",
     name: "Retro Cartoon",
     tagline: "Playful palettes with vintage charm.",
-    icon: styleIcon,
+    icon: require("@/assets/style-images/retro-cartoon.png"),
   },
   {
     id: "80s_glam",
     name: "80s Glam",
     tagline: "Flashy neon and glamorous highlights.",
-    icon: styleIcon,
+    icon: require("@/assets/style-images/80s-glam.png"),
   },
   {
     id: "art_nouveau",
     name: "Art Nouveau",
     tagline: "Ornate patterns with organic flow.",
-    icon: styleIcon,
+    icon: require("@/assets/style-images/art-nouveau.png"),
   },
   {
     id: "synthwave",
     name: "Synthwave",
     tagline: "Retro-futuristic gradients and glow.",
-    icon: styleIcon,
+    icon: require("@/assets/style-images/synthwave.png"),
   },
 ];
 
@@ -180,7 +179,8 @@ const mimeTypeToExtension = (mimeType: string | undefined): "png" | "jpg" | "jpe
 export default function CreateImageModal() {
   const router = useRouter();
   const { saveGeneratedImage, saving: savingImage } = useGalleryStorage();
-  const { settings } = useSettingsContext();
+  const { settings, updateSettings } = useSettingsContext();
+  const { isPro } = useSubscriptionContext();
   const selectedTheme = settings?.theme ?? "light";
   const isDarkTheme = selectedTheme === "dark";
   const themePalette = useMemo(() => getThemePalette(selectedTheme), [selectedTheme]);
@@ -244,6 +244,11 @@ export default function CreateImageModal() {
       return;
     }
 
+    if (!settings) {
+      showValidationError("Settings are still loading. Please try again in a moment.");
+      return;
+    }
+
     if (!prompt.trim()) {
       showValidationError("Please describe what you’d like to create before generating.");
       return;
@@ -271,6 +276,33 @@ export default function CreateImageModal() {
 
     if (!personGeneration) {
       showValidationError("Choose a people generation policy before generating.");
+      return;
+    }
+
+    const trimmedUserKey = settings.aiApiKey?.trim() ?? "";
+    const remainingCredits = settings.remainingCredits ?? 0;
+    let shouldConsumeCredit = false;
+    let apiKeyOverride: string | null = null;
+
+    if (isPro) {
+      apiKeyOverride = null;
+    } else if (trimmedUserKey.length > 0) {
+      apiKeyOverride = trimmedUserKey;
+    } else if (remainingCredits > 0) {
+      apiKeyOverride = null;
+      shouldConsumeCredit = true;
+    } else {
+      setErrorMessage("You’re out of free credits. Upgrade to keep generating.");
+      Alert.alert("No credits left", "Upgrade to Diotrix Pro for unlimited generations.", [
+        { text: "Maybe later", style: "cancel" },
+        {
+          text: "View plans",
+          style: "default",
+          onPress: () => {
+            router.push("/promotionModal");
+          },
+        },
+      ]);
       return;
     }
 
@@ -314,7 +346,7 @@ export default function CreateImageModal() {
         numberOfImages: 1,
         imageSize,
         personGeneration,
-        apiKey: settings?.aiApiKey ?? null,
+        apiKey: apiKeyOverride,
       });
 
       const asset = result.assets[0];
@@ -341,6 +373,20 @@ export default function CreateImageModal() {
         },
       });
 
+      if (shouldConsumeCredit) {
+        try {
+          const nextCredits = Math.max(remainingCredits - 1, 0);
+          await updateSettings({ remainingCredits: nextCredits });
+        } catch (creditError) {
+          Alert.alert(
+            "Credit sync issue",
+            creditError instanceof Error
+              ? creditError.message
+              : "We generated your image but couldn't update your credits."
+          );
+        }
+      }
+
       router.replace({ pathname: "/image/[id]", params: { id: String(record.id) } });
     } catch (error) {
       if (error instanceof InvalidApiKeyError) {
@@ -366,10 +412,12 @@ export default function CreateImageModal() {
     router,
     saveGeneratedImage,
     selectedAspect,
-    settings?.aiApiKey,
+    settings,
     savingImage,
     selectedGuidance,
     selectedStyle,
+    isPro,
+    updateSettings,
     showValidationError,
   ]);
 
@@ -399,6 +447,8 @@ export default function CreateImageModal() {
         showsVerticalScrollIndicator={false}
       >
         <View className="px-6 pt-6">
+
+          {/* Prompt Section */}
           <View className={`p-6 border rounded-3xl ${themePalette.border} ${themePalette.card}`}>
             <Pressable
               onPress={() => toggleSection("prompt")}
@@ -444,6 +494,7 @@ export default function CreateImageModal() {
             )}
           </View>
 
+          {/* Aspect Ratio Section */}
           <View className={`p-6 mt-8 border rounded-3xl ${themePalette.border} ${themePalette.card}`}>
             <Pressable
               onPress={() => toggleSection("aspect")}
@@ -485,6 +536,7 @@ export default function CreateImageModal() {
             )}
           </View>
 
+          {/* Style Preset Section */}
           <View className={`p-6 mt-8 border rounded-3xl ${themePalette.border} ${themePalette.card}`}>
             <Pressable
               onPress={() => toggleSection("style")}
@@ -516,7 +568,7 @@ export default function CreateImageModal() {
                     >
                       <Image
                         source={preset.icon}
-                        className={`border rounded-full h-14 w-14 ${themePalette.border}`}
+                        className={`border rounded-full h-20 w-20 ${themePalette.border}`}
                         resizeMode="cover"
                       />
                       <Text className={`mt-3 text-sm font-semibold text-center ${themePalette.textPrimary}`} numberOfLines={2}>
@@ -529,6 +581,7 @@ export default function CreateImageModal() {
             )}
           </View>
 
+          {/* Guidance Scale Section */}
           <View className={`p-6 mt-8 border rounded-3xl ${themePalette.border} ${themePalette.card}`}>
             <Pressable
               onPress={() => toggleSection("guidance")}
@@ -570,6 +623,7 @@ export default function CreateImageModal() {
             )}
           </View>
 
+          {/* Output Settings Section */}
           <View className={`p-6 mt-8 border rounded-3xl ${themePalette.border} ${themePalette.card}`}>
             <Pressable
               onPress={() => toggleSection("output")}
@@ -633,6 +687,7 @@ export default function CreateImageModal() {
             )}
           </View>
 
+          {/* Generate Button & Error Message */}
           <View className="mt-10 space-y-4">
             {errorMessage && (
               <View className="px-4 py-3 border rounded-2xl border-red-500/30 bg-red-500/10">

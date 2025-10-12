@@ -93,10 +93,7 @@ const resolveApiKey = (override?: string | null): string => {
     return override.trim();
   }
 
-  const envKey =
-    process.env.EXPO_PUBLIC_GOOGLE_AI_KEY ??
-    process.env.EXPO_PUBLIC_IMAGEN_API_KEY ??
-    process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+  const envKey = process.env.EXPO_PUBLIC_GOOGLE_AI_KEY
 
   if (!envKey) {
     throw new Error(
