@@ -19,26 +19,26 @@ type OnboardingSlide = {
 const onboardingSlides: OnboardingSlide[] = [
   {
     id: "discover",
-    badge: "IMAGINE",
-    title: "Craft concepts with Gemini",
+    badge: "DISCOVER",
+    title: "Imagine and Create",
     description:
-      "Describe your vision in rich detail and Diotrix will orchestrate Imagen to bring breathtaking scenes to life.",
+      "Put your thoughts into words, and let Diotrix's AI turn your dreams into stunning visuals.",
     image: require("@/assets/onboard-images/whale.png") as ImageSourcePropType,
   },
   {
     id: "curate",
     badge: "CURATE",
-    title: "Build a living gallery",
+    title: "Collect Your Inspiration",
     description:
-      "Store every render locally with metadata, styles, and notes so inspiration is always at your fingertips.",
+      "Save every image you create along with your notes and the styles you used. Let your source of inspiration always be at your fingertips.",
     image: require("@/assets/onboard-images/city.png") as ImageSourcePropType,
   },
   {
     id: "accelerate",
     badge: "ACCELERATE",
-    title: "Unlock limitless flow",
+    title: "Ignite Your Creativity",
     description:
-      "Upgrade to Diotrix Pro or connect your key for faster queues, premium styles, and endless experimentation.",
+      "Upgrade to Pro, create faster without the wait, discover premium styles, and experiment without limits.",
     image: require("@/assets/onboard-images/nebula.png") as ImageSourcePropType,
   },
 ];

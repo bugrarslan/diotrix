@@ -156,7 +156,6 @@ const ImageScreen = () => {
             : null,
       },
       { label: "Style", value: summarizeValue(extras?.styleName) },
-      { label: "Model", value: summarizeValue(record.metadata?.model) },
       { label: "Resolution", value: summarizeValue(extras?.imageSize) },
       { label: "Person Policy", value: summarizeValue(extras?.personGeneration) },
       { label: "Created", value: formatDateTime(record.createdAt) },
