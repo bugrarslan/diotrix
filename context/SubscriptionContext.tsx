@@ -27,6 +27,7 @@ type SubscriptionContextValue = {
 	purchasePackage: (selectedPackage: PurchasesPackage) => Promise<CustomerInfo>;
 	purchasePackageByIdentifier: (identifier: string) => Promise<CustomerInfo>;
 	restorePurchases: () => Promise<CustomerInfo>;
+	manageSubscription: () => Promise<void>;
 };
 
 const SubscriptionContext = createContext<SubscriptionContextValue | undefined>(undefined);
@@ -124,6 +125,21 @@ export function SubscriptionProvider({ children }: PropsWithChildren) {
 		}
 	}, [refresh]);
 
+	const manageSubscription = useCallback(async () => {
+		setProcessing(true);
+		setError(null);
+
+		try {
+			await Purchases.showManageSubscriptions();
+		} catch (err) {
+			const normalized = normalizeError(err, "Unable to open subscription management.");
+			setError(normalized);
+			throw normalized;
+		} finally {
+			setProcessing(false);
+		}
+	}, []);
+
 	const activeEntitlements = useMemo(
 		() => Object.keys(customerInfo?.entitlements?.active ?? {}),
 		[customerInfo]
@@ -159,6 +175,7 @@ export function SubscriptionProvider({ children }: PropsWithChildren) {
 			purchasePackage,
 			purchasePackageByIdentifier,
 			restorePurchases,
+			manageSubscription,
 		}),
 		[
 			loading,
@@ -173,6 +190,7 @@ export function SubscriptionProvider({ children }: PropsWithChildren) {
 			purchasePackage,
 			purchasePackageByIdentifier,
 			restorePurchases,
+			manageSubscription,
 		]
 	);
 

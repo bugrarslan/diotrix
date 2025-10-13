@@ -58,6 +58,7 @@ export default function SettingsScreen() {
     loading: subscriptionLoading,
     isPro,
     restorePurchases,
+    manageSubscription,
     processing: subscriptionProcessing,
   } = useSubscriptionContext();
   const { clearGallery, saving: gallerySaving } = useGalleryStorage();
@@ -326,8 +327,26 @@ export default function SettingsScreen() {
 
                 <View className="flex-row items-center justify-between">
                   <Pressable
-                    className="inline-flex px-4 py-2 mt-4 border rounded-full border-primary-500/40 bg-primary-500/20"
-                    onPress={() => router.push("/promotionModal")}
+                    className={`inline-flex px-4 py-2 mt-4 border rounded-full border-primary-500/40 bg-primary-500/20 ${
+                      subscriptionProcessing ? "opacity-60" : ""
+                    }`}
+                    onPress={() => {
+                      if (subscriptionProcessing) {
+                        return;
+                      }
+                      if (isPro) {
+                        void manageSubscription().catch((error) => {
+                          const message =
+                            error instanceof Error
+                              ? error.message
+                              : "Unable to open subscription management.";
+                          Alert.alert("Subscription", message);
+                        });
+                      } else {
+                        router.push("/promotionModal");
+                      }
+                    }}
+                    disabled={subscriptionProcessing}
                   >
                     <Text className={`text-xs font-semibold tracking-wide uppercase ${themePalette.textSecondary}`}>
                       {isPro ? "Manage subscription" : "See pro plans"}
