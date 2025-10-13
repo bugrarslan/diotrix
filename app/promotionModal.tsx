@@ -45,29 +45,29 @@ const benefitHighlights: BenefitHighlight[] = [
 
 const planFeatures: PlanFeature[] = [
   {
-    label: "Daily Gemini prompts",
-    pro: "Unlimited",
-    free: "5 prompts",
+    label: "Unlimited Generations",
+    pro: "✅",
+    free: "Limited to 5",
   },
   {
-    label: "Generation priority",
-    pro: "Fast lane",
-    free: "Standard queue",
+    label: "Generation Priority",
+    pro: "Fast Lane",
+    free: "Standard Queue",
   },
   {
-    label: "Style libraries",
-    pro: "Full access",
-    free: "Starter set",
+    label: "All Premium Styles",
+    pro: "✅",
+    free: "❌",
   },
   {
-    label: "Local-first gallery",
-    pro: "Unlimited",
-    free: "10 items",
+    label: "Advanced Settings",
+    pro: "✅",
+    free: "❌",
   },
   {
-    label: "API key override",
-    pro: "Supported",
-    free: "Supported",
+    label: "Bring Your Own API Key",
+    pro: "✅",
+    free: "✅",
   },
 ];
 
@@ -250,36 +250,64 @@ export default function PromotionModal() {
             className={`p-6 mt-8 border rounded-3xl ${themePalette.border} ${themePalette.card}`}
           >
             <Text
-              className={`text-base font-semibold ${themePalette.textPrimary}`}
+              className={`mb-6 text-base font-semibold ${themePalette.textPrimary}`}
             >
               Compare plans
             </Text>
-            <View className="gap-3 mt-4 space-y-3">
-              {planFeatures.map((feature) => (
+            
+            {/* Table Header */}
+            <View className="flex-row items-center pb-3 mb-4 border-b border-primary-500/20">
+              <View className="flex-1">
+                <Text
+                  className={`text-xs font-semibold uppercase tracking-[0.25em] ${themePalette.textMuted}`}
+                >
+                  Feature
+                </Text>
+              </View>
+              <View className="items-center w-28">
+                <View className="px-3 py-1 rounded-full bg-primary-500/15">
+                  <Text className="text-xs font-bold tracking-wide text-primary-500">
+                    PRO
+                  </Text>
+                </View>
+              </View>
+              <View className="items-center w-28">
+                <Text
+                  className={`text-xs font-semibold uppercase tracking-[0.25em] ${themePalette.textMuted}`}
+                >
+                  Free
+                </Text>
+              </View>
+            </View>
+
+            {/* Table Rows */}
+            <View className="gap-4">
+              {planFeatures.map((feature, index) => (
                 <View
                   key={feature.label}
-                  className={`flex-row items-center gap-4 p-4 border rounded-2xl ${themePalette.border} ${themePalette.surface}`}
+                  className={`flex-row items-center ${
+                    index !== planFeatures.length - 1 ? "pb-4 border-b" : ""
+                  } ${themePalette.border}`}
                 >
-                  <View className="flex-1">
+                  <View className="flex-1 pr-2">
                     <Text
-                      className={`text-sm font-semibold ${themePalette.textPrimary}`}
+                      className={`text-sm font-medium ${themePalette.textPrimary}`}
                     >
                       {feature.label}
                     </Text>
-                    <Text
-                      className={`mt-1 text-xs uppercase tracking-[0.2em] ${themePalette.textMuted}`}
-                    >
-                      Pro · {feature.pro}
-                    </Text>
                   </View>
-                  <View className="items-end">
+                  <View className="items-center justify-center w-28">
+                    <View className="flex-row items-center gap-1">
+                      <Text
+                        className="text-sm font-semibold text-primary-500"
+                      >
+                        {feature.pro}
+                      </Text>
+                    </View>
+                  </View>
+                  <View className="items-center justify-center w-28">
                     <Text
-                      className={`text-xs uppercase tracking-[0.2em] ${themePalette.textMuted}`}
-                    >
-                      Free
-                    </Text>
-                    <Text
-                      className={`mt-1 text-sm font-semibold ${themePalette.textSecondary}`}
+                      className={`text-sm font-medium ${themePalette.textSecondary}`}
                     >
                       {feature.free}
                     </Text>
