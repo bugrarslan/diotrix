@@ -172,7 +172,7 @@ const stylePresets: StylePreset[] = [
   
 ];
 
-const freeStyleIds = ["retro_cartoon", "coloring_book", "synthwave", "anime", "dramatic_headshot", "minimalist_line_art", "line_art", "low_poly"];
+const freeStyleIds = ["retro_cartoon", "coloring_book", "synthwave", "anime", "dramatic_headshot", "minimalist_line_art", "low_poly"];
 const freeGuidanceIds = ["low"];
 const freeImageSizeIds: ImageSizeOption[] = ["1K"];
 const freePersonGenerationIds: PersonGenerationOption[] = ["dont_allow"];
