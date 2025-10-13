@@ -17,11 +17,12 @@ import {
   Share,
   Text,
   View,
+  useWindowDimensions,
 } from "react-native";
-import { Gesture, GestureDetector, GestureHandlerRootView } from "react-native-gesture-handler";
-import Animated, { useAnimatedStyle, useSharedValue } from "react-native-reanimated";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as MediaLibrary from "expo-media-library";
+import { fitContainer, ResumableZoom, useImageResolution } from "react-native-zoom-toolkit";
 
 const toNumber = (value: string | string[] | undefined): number | null => {
   if (!value) {
@@ -93,8 +94,6 @@ const ImageScreen = () => {
   const [deleting, setDeleting] = useState(false);
   const [savingToDevice, setSavingToDevice] = useState(false);
   const [sharingImage, setSharingImage] = useState(false);
-  const fullscreenScale = useSharedValue(1);
-  const fullscreenSavedScale = useSharedValue(1);
   const { deleteImage, saving: gallerySaving } = useGalleryStorage();
 
   const selectedTheme = settings?.theme ?? "light";
@@ -186,9 +185,7 @@ const ImageScreen = () => {
 
   const handleCloseFullscreen = useCallback(() => {
     setFullscreenVisible(false);
-    fullscreenScale.value = 1;
-    fullscreenSavedScale.value = 1;
-  }, [fullscreenScale, fullscreenSavedScale]);
+  }, []);
 
   const handlePerformDelete = useCallback(async () => {
     if (!record) {
@@ -228,31 +225,9 @@ const ImageScreen = () => {
     );
   }, [deleting, gallerySaving, handlePerformDelete, record]);
 
-  const pinchGesture = useMemo(
-    () =>
-      Gesture.Pinch()
-        .onBegin(() => {
-          fullscreenSavedScale.value = fullscreenScale.value;
-        })
-        .onUpdate((event) => {
-          const nextScale = fullscreenSavedScale.value * event.scale;
-          fullscreenScale.value = Math.min(Math.max(nextScale, 1), 4);
-        })
-        .onEnd(() => {
-          fullscreenSavedScale.value = fullscreenScale.value;
-        })
-        .onFinalize(() => {
-          if (fullscreenScale.value < 1) {
-            fullscreenScale.value = 1;
-            fullscreenSavedScale.value = 1;
-          }
-        }),
-    [fullscreenSavedScale, fullscreenScale]
-  );
-
-  const fullscreenImageStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: fullscreenScale.value }],
-  }));
+  // Use react-native-zoom-toolkit for pinch-to-zoom in fullscreen modal
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  const { isFetching: isResolvingImage, resolution } = useImageResolution({ uri: record?.uri ?? "" });
 
   const handleSaveToDevice = useCallback(async () => {
     if (!record?.uri || savingToDevice) {
@@ -435,22 +410,32 @@ const ImageScreen = () => {
               </View>
 
               <View className="items-center justify-center flex-1 px-6 pb-10">
-                <GestureDetector gesture={pinchGesture}>
-                  <Animated.View className="w-full">
-                    <Animated.Image
-                      source={{ uri: record?.uri }}
-                      style={[
-                        fullscreenImageStyle,
-                        {
-                          width: "100%",
-                          aspectRatio: aspectRatio || 1,
-                        },
-                      ]}
-                      className={`border rounded-3xl ${themePalette.border} ${themePalette.surface}`}
-                      resizeMode="contain"
-                    />
-                  </Animated.View>
-                </GestureDetector>
+                {isResolvingImage || !resolution ? (
+                  <ActivityIndicator size="small" color="#c4b5fd" />
+                ) : (
+                  (() => {
+                    const containerWidth = Math.max(0, windowWidth - 48); // account for px-6 padding
+                    const containerHeight = Math.max(0, windowHeight - 220); // leave space for header/buttons
+                    const size = fitContainer(resolution.width / resolution.height, {
+                      width: containerWidth,
+                      height: containerHeight,
+                    });
+
+                    return (
+                      <ResumableZoom maxScale={4}>
+                        <Image
+                          source={{ uri: record?.uri }}
+                          style={{
+                            width: size.width,
+                            height: size.height,
+                            borderRadius: 24,
+                          }}
+                          resizeMethod="scale"
+                        />
+                      </ResumableZoom>
+                    );
+                  })()
+                )}
               </View>
 
               <View className="flex-row items-center gap-4 px-6 pb-6">
