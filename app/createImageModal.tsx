@@ -65,12 +65,6 @@ const aspectRatioValueMap: Record<AspectRatioOption["id"], ImagenAspectRatio> = 
 
 const stylePresets: StylePreset[] = [
   {
-    id: "cyberpunk",
-    name: "Cyberpunk",
-    tagline: "Neon drenched, high-contrast futurism.",
-    icon: require("@/assets/style-images/cyberpunk.png"),
-  },
-  {
     id: "anime",
     name: "Anime",
     tagline: "Soft shading and expressive line work.",
@@ -89,16 +83,48 @@ const stylePresets: StylePreset[] = [
     icon: require("@/assets/style-images/coloring-book.png"),
   },
   {
-    id: "photo_shoot",
-    name: "Photo Shoot",
-    tagline: "Studio-quality lighting and texture.",
-    icon: require("@/assets/style-images/photo-shoot.png"),
-  },
-  {
     id: "retro_cartoon",
     name: "Retro Cartoon",
     tagline: "Playful palettes with vintage charm.",
     icon: require("@/assets/style-images/retro-cartoon.png"),
+  },
+  {
+    id: "synthwave",
+    name: "Synthwave",
+    tagline: "Retro-futuristic gradients and glow.",
+    icon: require("@/assets/style-images/synthwave.png"),
+  },
+  {
+    id: "low_poly",
+    name: "Low Poly",
+    tagline: "Geometric shapes creating a faceted, modern look.",
+    icon: require("@/assets/style-images/low-poly.png"),
+  },
+  {
+    id: "minimalist_line_art",
+    name: "Line Art",
+    tagline: "Clean, elegant lines defining form and space.",
+    icon: require("@/assets/style-images/line-art.png"),
+  },
+  {
+    id: "steampunk",
+    name: "Steampunk",
+    tagline: "Victorian elegance meets retro-futuristic machinery.",
+    icon: require("@/assets/style-images/steampunk.png"),
+  },
+  {
+    id: "cyberpunk",
+    name: "Cyberpunk",
+    tagline: "Neon drenched, high-contrast futurism.",
+    icon: require("@/assets/style-images/cyberpunk.png"),
+  },
+  
+  
+  {
+    id: "photo_shoot",
+    name: "Photo Shoot",
+    tagline: "Studio-quality lighting and texture.",
+    icon: require("@/assets/style-images/photo-shoot.png"),
   },
   {
     id: "80s_glam",
@@ -112,13 +138,44 @@ const stylePresets: StylePreset[] = [
     tagline: "Ornate patterns with organic flow.",
     icon: require("@/assets/style-images/art-nouveau.png"),
   },
+  
   {
-    id: "synthwave",
-    name: "Synthwave",
-    tagline: "Retro-futuristic gradients and glow.",
-    icon: require("@/assets/style-images/synthwave.png"),
+    id: "photorealistic",
+    name: "Photorealistic",
+    tagline: "Lifelike detail and true-to-life lighting.",
+    icon: require("@/assets/style-images/photorealistic.png"),
   },
+  {
+    id: "cinematic",
+    name: "Cinematic",
+    tagline: "Wide-screen drama with epic scope.",
+    icon: require("@/assets/style-images/cinematic.png"),
+  },
+  {
+    id: "3d_render",
+    name: "3D Render",
+    tagline: "Polished and vibrant, like a modern animated film.",
+    icon: require("@/assets/style-images/3d-render.png"),
+  },
+  {
+    id: "fantasy_art",
+    name: "Fantasy Art",
+    tagline: "Mythical creatures and enchanted landscapes.",
+    icon: require("@/assets/style-images/fantasy-art.png"),
+  },
+  {
+    id: "watercolor",
+    name: "Watercolor",
+    tagline: "Soft, translucent washes and delicate blends.",
+    icon: require("@/assets/style-images/watercolor.png"),
+  },
+  
 ];
+
+const freeStyleIds = ["retro_cartoon", "coloring_book", "synthwave", "anime", "dramatic_headshot", "minimalist_line_art", "line_art", "low_poly"];
+const freeGuidanceIds = ["low"];
+const freeImageSizeIds: ImageSizeOption[] = ["1K"];
+const freePersonGenerationIds: PersonGenerationOption[] = ["dont_allow"];
 
 const guidancePresets: GuidancePreset[] = [
   { id: "low", label: "Gentle", value: 4.5, description: "Loose interpretation for inventive results." },
@@ -558,14 +615,26 @@ export default function CreateImageModal() {
               <View className="flex-row flex-wrap justify-between mt-4 gap-y-4">
                 {stylePresets.map((preset) => {
                   const isActive = preset.id === selectedStyle;
+                  const isLocked = !isPro && !freeStyleIds.includes(preset.id);
                   return (
                     <Pressable
                       key={preset.id}
-                      onPress={() => setSelectedStyle(preset.id)}
+                      onPress={() => {
+                        if (isLocked) {
+                          router.push("/promotionModal");
+                        } else {
+                          setSelectedStyle(preset.id);
+                        }
+                      }}
                       className={`w-[30%] items-center rounded-3xl border px-3 py-4 ${
                         isActive ? "border-primary-500 bg-primary-500/20" : `${themePalette.border} ${themePalette.surface}`
-                      }`}
+                      } ${isLocked ? "opacity-60" : ""}`}
                     >
+                      {isLocked && (
+                        <View className="absolute z-10 p-1 rounded-full top-2 left-2 bg-primary-500">
+                          <Ionicons name="star" size={12} color="#ffffff" />
+                        </View>
+                      )}
                       <Image
                         source={preset.icon}
                         className={`border rounded-full h-20 w-20 ${themePalette.border}`}
@@ -603,17 +672,31 @@ export default function CreateImageModal() {
                 <View className="gap-3 mt-4 space-y-3">
                   {guidancePresets.map((preset) => {
                     const isActive = preset.id === selectedGuidance;
+                    const isLocked = !isPro && !freeGuidanceIds.includes(preset.id);
                     return (
                       <Pressable
                         key={preset.id}
-                        onPress={() => setSelectedGuidance(preset.id)}
+                        onPress={() => {
+                          if (isLocked) {
+                            router.push("/promotionModal");
+                          } else {
+                            setSelectedGuidance(preset.id);
+                          }
+                        }}
                         className={`flex-row items-center justify-between rounded-2xl border px-4 py-4 ${
                           isActive ? "border-primary-500 bg-primary-500/20" : `${themePalette.border} ${themePalette.surface}`
-                        }`}
+                        } ${isLocked ? "opacity-60" : ""}`}
                       >
-                        <View>
-                          <Text className={`text-sm font-semibold ${themePalette.textPrimary}`}>{preset.label}</Text>
-                          <Text className={`mt-1 text-xs ${themePalette.textSecondary}`}>{preset.description}</Text>
+                        <View className="flex-row items-center flex-1 gap-2">
+                          {isLocked && (
+                            <View className="p-1 rounded-full bg-primary-500">
+                              <Ionicons name="star" size={10} color="#ffffff" />
+                            </View>
+                          )}
+                          <View className="flex-1">
+                            <Text className={`text-sm font-semibold ${themePalette.textPrimary}`}>{preset.label}</Text>
+                            <Text className={`mt-1 text-xs ${themePalette.textSecondary}`}>{preset.description}</Text>
+                          </View>
                         </View>
                         <Text className={`text-sm font-semibold ${themePalette.textPrimary}`}>{preset.value.toFixed(1)}</Text>
                       </Pressable>
@@ -647,17 +730,31 @@ export default function CreateImageModal() {
                 <View className="gap-3 mt-4 space-y-3">
                   {imageSizeOptions.map((option) => {
                     const isActive = option.id === imageSize;
+                    const isLocked = !isPro && !freeImageSizeIds.includes(option.id);
                     return (
                       <Pressable
                         key={option.id}
-                        onPress={() => setImageSize(option.id)}
+                        onPress={() => {
+                          if (isLocked) {
+                            router.push("/promotionModal");
+                          } else {
+                            setImageSize(option.id);
+                          }
+                        }}
                         className={`flex-row items-center justify-between rounded-2xl border px-4 py-4 ${
                           isActive ? "border-primary-500 bg-primary-500/20" : `${themePalette.border} ${themePalette.surface}`
-                        }`}
+                        } ${isLocked ? "opacity-60" : ""}`}
                       >
-                        <View>
-                          <Text className={`text-sm font-semibold ${themePalette.textPrimary}`}>{option.label}</Text>
-                          <Text className={`mt-1 text-xs ${themePalette.textSecondary}`}>{option.description}</Text>
+                        <View className="flex-row items-center flex-1 gap-2">
+                          {isLocked && (
+                            <View className="p-1 rounded-full bg-primary-500">
+                              <Ionicons name="star" size={10} color="#ffffff" />
+                            </View>
+                          )}
+                          <View className="flex-1">
+                            <Text className={`text-sm font-semibold ${themePalette.textPrimary}`}>{option.label}</Text>
+                            <Text className={`mt-1 text-xs ${themePalette.textSecondary}`}>{option.description}</Text>
+                          </View>
                         </View>
                       </Pressable>
                     );
@@ -667,17 +764,31 @@ export default function CreateImageModal() {
                 <View className="gap-3 space-y-3">
                   {personPolicies.map((policy) => {
                     const isActive = policy.id === personGeneration;
+                    const isLocked = !isPro && !freePersonGenerationIds.includes(policy.id);
                     return (
                       <Pressable
                         key={policy.id}
-                        onPress={() => setPersonGeneration(policy.id)}
+                        onPress={() => {
+                          if (isLocked) {
+                            router.push("/promotionModal");
+                          } else {
+                            setPersonGeneration(policy.id);
+                          }
+                        }}
                         className={`flex-row items-center justify-between rounded-2xl border px-4 py-4 ${
                           isActive ? "border-primary-500 bg-primary-500/20" : `${themePalette.border} ${themePalette.surface}`
-                        }`}
+                        } ${isLocked ? "opacity-60" : ""}`}
                       >
-                        <View>
-                          <Text className={`text-sm font-semibold ${themePalette.textPrimary}`}>{policy.label}</Text>
-                          <Text className={`mt-1 text-xs ${themePalette.textSecondary}`}>{policy.description}</Text>
+                        <View className="flex-row items-center flex-1 gap-2">
+                          {isLocked && (
+                            <View className="p-1 rounded-full bg-primary-500">
+                              <Ionicons name="star" size={10} color="#ffffff" />
+                            </View>
+                          )}
+                          <View className="flex-1">
+                            <Text className={`text-sm font-semibold ${themePalette.textPrimary}`}>{policy.label}</Text>
+                            <Text className={`mt-1 text-xs ${themePalette.textSecondary}`}>{policy.description}</Text>
+                          </View>
                         </View>
                       </Pressable>
                     );
