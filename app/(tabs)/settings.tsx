@@ -35,19 +35,19 @@ type SupportLink = {
 
 const SUPPORT_LINKS: SupportLink[] = [
   {
-    icon: "help-circle-outline",
-    label: "Documentation & FAQs",
-    href: "https://github.com/bugrarslan/diotrix#readme",
-  },
-  {
     icon: "mail-outline",
     label: "Contact support",
-    href: "mailto:support@diotrix.app",
+    href: "mailto:diotrix@outlook.com",
   },
   {
     icon: "logo-x",
     label: "Follow updates on X",
-    href: "https://x.com/bugrarsln7",
+    href: "https://x.com/diotrixapp",
+  },
+  {
+    icon: "logo-instagram",
+    label: "Follow updates on Instagram",
+    href: "https://instagram.com/diotrixapp",
   },
 ];
 
@@ -210,6 +210,9 @@ export default function SettingsScreen() {
     }
   }, [restorePurchases]);
 
+  const isTrialVersion = useMemo(() => settings?.isTrialVersion ?? true, [settings?.isTrialVersion]);
+  const remainingCredits = useMemo(() => settings?.remainingCredits ?? 0, [settings?.remainingCredits]);
+
   const subscriptionStatusLabel = useMemo(() => {
     if (subscriptionLoading) {
       return "Checking subscription…";
@@ -299,6 +302,28 @@ export default function SettingsScreen() {
                 <Text className={`mt-1 text-sm ${themePalette.textSecondary}`}>
                   {subscriptionDescription}
                 </Text>
+                
+                {isTrialVersion && !isPro && (
+                  <View className={`mt-4 p-3 rounded-xl border ${themePalette.border} ${themePalette.surface}`}>
+                    <View className="flex-row items-center justify-between">
+                      <Text className={`text-xs font-semibold tracking-[0.2em] ${themePalette.textMuted}`}>
+                        TRIAL CREDITS REMAINING
+                      </Text>
+                      <View className="flex-row items-center gap-2">
+                        <Ionicons name="flash" size={16} color="#c4b5fd" />
+                        <Text className={`text-lg font-bold ${themePalette.textPrimary}`}>
+                          {remainingCredits}
+                        </Text>
+                      </View>
+                    </View>
+                    <Text className={`mt-2 text-xs ${themePalette.textSecondary}`}>
+                      {remainingCredits === 0
+                        ? "Your trial has ended. Upgrade to Pro or add your API key to continue."
+                        : `You have ${remainingCredits} free ${remainingCredits === 1 ? "generation" : "generations"} left.`}
+                    </Text>
+                  </View>
+                )}
+
                 <View className="flex-row items-center justify-between">
                   <Pressable
                     className="inline-flex px-4 py-2 mt-4 border rounded-full border-primary-500/40 bg-primary-500/20"
