@@ -60,14 +60,28 @@ const formatDateTime = (value: string): string => {
   }).format(date);
 };
 
-const summarizeValue = (value?: unknown): string | null => {
+const summarizeValue = (value?: unknown, field?: string): string | null => {
   if (value === null || value === undefined) {
     return null;
   }
 
   if (typeof value === "string") {
     const trimmed = value.trim();
-    return trimmed.length > 0 ? trimmed : null;
+    if (trimmed.length === 0) {
+      return null;
+    }
+    
+    // Handle person policy formatting
+    if (field === "personGeneration") {
+      if (trimmed === "dont_allow") {
+        return "Don't allowed";
+      }
+      if (trimmed === "allow_adult") {
+        return "Only adults allowed";
+      }
+    }
+    
+    return trimmed;
   }
 
   if (typeof value === "number") {
@@ -156,7 +170,7 @@ const ImageScreen = () => {
       },
       { label: "Style", value: summarizeValue(extras?.styleName) },
       { label: "Resolution", value: summarizeValue(extras?.imageSize) },
-      { label: "Person Policy", value: summarizeValue(extras?.personGeneration) },
+      { label: "Person Policy", value: summarizeValue(extras?.personGeneration, "personGeneration") },
       { label: "Created", value: formatDateTime(record.createdAt) },
     ];
 
@@ -394,28 +408,46 @@ const ImageScreen = () => {
 
       <Modal visible={fullscreenVisible} transparent animationType="fade" onRequestClose={handleCloseFullscreen}>
         <GestureHandlerRootView className="flex-1">
-          <View className="flex-1 bg-black/95">
-            <SafeAreaView className="flex-1" edges={["top", "bottom"]}>
-              <View className="flex-row items-center justify-between px-6 pt-6">
+          <SafeAreaView className="flex-1 bg-black" edges={["top", "bottom"]}>
+            {/* Header */}
+            <View className="flex-row items-center justify-between px-6 py-4">
                 <Pressable
                   onPress={handleCloseFullscreen}
-                  className={`flex-row items-center gap-2 px-4 py-2 border rounded-full ${themePalette.border} ${themePalette.surface}`}
+                  className="items-center justify-center w-10 h-10"
                   accessibilityLabel="Close fullscreen image"
                 >
-                  <Ionicons name="close" size={18} color={isDarkTheme ? "#ffffff" : "#0f172a"} />
-                  <Text className={`text-xs font-semibold uppercase tracking-[0.2em] ${themePalette.textSecondary}`}>
-                    Close
+                  <Ionicons name="close" size={24} color="#ffffff" />
+                </Pressable>
+                
+                <View className="flex-1 px-4">
+                  <Text 
+                    className="text-base font-medium text-center text-white" 
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
+                    {record?.prompt}
                   </Text>
+                  <Text className="mt-1 text-xs text-center text-white/60">
+                    {formatDateTime(record?.createdAt ?? "")}
+                  </Text>
+                </View>
+
+                <Pressable
+                  className="items-center justify-center w-10 h-10"
+                  accessibilityLabel="More options"
+                >
+                  {/* <Ionicons name="ellipsis-horizontal" size={24} color="#ffffff" /> */}
                 </Pressable>
               </View>
 
-              <View className="items-center justify-center flex-1 px-6 pb-10">
+              {/* Image Container */}
+              <View className="items-center justify-center flex-1">
                 {isResolvingImage || !resolution ? (
-                  <ActivityIndicator size="small" color="#c4b5fd" />
+                  <ActivityIndicator size="small" color="#ffffff" />
                 ) : (
                   (() => {
-                    const containerWidth = Math.max(0, windowWidth - 48); // account for px-6 padding
-                    const containerHeight = Math.max(0, windowHeight - 220); // leave space for header/buttons
+                    const containerWidth = windowWidth;
+                    const containerHeight = windowHeight - 180; // leave space for header/footer
                     const size = fitContainer(resolution.width / resolution.height, {
                       width: containerWidth,
                       height: containerHeight,
@@ -428,7 +460,6 @@ const ImageScreen = () => {
                           style={{
                             width: size.width,
                             height: size.height,
-                            borderRadius: 24,
                           }}
                           resizeMethod="scale"
                         />
@@ -438,43 +469,43 @@ const ImageScreen = () => {
                 )}
               </View>
 
-              <View className="flex-row items-center gap-4 px-6 pb-6">
-                <Pressable
-                  onPress={handleSaveToDevice}
-                  disabled={savingToDevice}
-                  className={`flex-1 flex-row items-center justify-center gap-2 rounded-full border px-4 py-3 ${themePalette.border} ${themePalette.surface} ${
-                    savingToDevice ? "opacity-60" : ""
-                  }`}
-                >
-                  {savingToDevice ? (
-                    <ActivityIndicator size="small" color="#c4b5fd" />
-                  ) : (
-                    <Ionicons name="download-outline" size={18} color={isDarkTheme ? "#ffffff" : "#0f172a"} />
-                  )}
-                  <Text
-                    className={`text-sm font-semibold ${themePalette.textSecondary}`}
-                  >
-                    Save to gallery
-                  </Text>
-                </Pressable>
+            {/* Bottom Action Bar */}
+            <View className="flex-row items-center justify-around px-6 py-6 bg-black border-t border-white/10">
+              
 
-                <Pressable
-                  onPress={handleShareImage}
-                  disabled={sharingImage}
-                  className={`flex-1 flex-row items-center justify-center gap-2 rounded-full bg-primary-600 px-4 py-3 ${
-                    sharingImage ? "opacity-75" : ""
-                  }`}
-                >
+              <Pressable
+                onPress={handleSaveToDevice}
+                disabled={savingToDevice}
+                className={`items-center justify-center ${savingToDevice ? "opacity-50" : ""}`}
+                accessibilityLabel="Save to device"
+              >
+                <View className="items-center justify-center w-12 h-12 mb-1 bg-white/10 rounded-2xl">
+                  {savingToDevice ? (
+                    <ActivityIndicator size="small" color="#ffffff" />
+                  ) : (
+                    <Ionicons name="download-outline" size={24} color="#ffffff" />
+                  )}
+                </View>
+                <Text className="text-xs text-white/80">Save to gallery</Text>
+              </Pressable>
+
+              <Pressable
+                onPress={handleShareImage}
+                disabled={sharingImage}
+                className={`items-center justify-center ${sharingImage ? "opacity-50" : ""}`}
+                accessibilityLabel="Share image"
+              >
+                <View className="items-center justify-center w-12 h-12 mb-1 bg-white/10 rounded-2xl">
                   {sharingImage ? (
                     <ActivityIndicator size="small" color="#ffffff" />
                   ) : (
-                    <Ionicons name="share-outline" size={18} color="#ffffff" />
+                    <Ionicons name="share-outline" size={24} color="#ffffff" />
                   )}
-                  <Text className="text-sm font-semibold text-white">Share</Text>
-                </Pressable>
-              </View>
-            </SafeAreaView>
-          </View>
+                </View>
+                <Text className="text-xs text-white/80">Share</Text>
+              </Pressable>
+            </View>
+          </SafeAreaView>
         </GestureHandlerRootView>
       </Modal>
     </SafeAreaView>
