@@ -40,6 +40,16 @@ const SUPPORT_LINKS: SupportLink[] = [
     href: "mailto:diotrix@outlook.com",
   },
   {
+    icon: "shield-checkmark-outline",
+    label: "Privacy policy",
+    href: "https://diotrix.com/privacy-policy",
+  },
+  {
+    icon: "document-text-outline",
+    label: "Terms of use",
+    href: "https://diotrix.com/terms-of-use",
+  },
+  {
     icon: "logo-x",
     label: "Follow updates on X",
     href: "https://x.com/diotrixapp",
