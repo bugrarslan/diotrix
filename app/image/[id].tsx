@@ -22,6 +22,7 @@ import {
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as MediaLibrary from "expo-media-library";
+import * as Clipboard from "expo-clipboard";
 import { fitContainer, ResumableZoom, useImageResolution } from "react-native-zoom-toolkit";
 
 const toNumber = (value: string | string[] | undefined): number | null => {
@@ -108,6 +109,8 @@ const ImageScreen = () => {
   const [deleting, setDeleting] = useState(false);
   const [savingToDevice, setSavingToDevice] = useState(false);
   const [sharingImage, setSharingImage] = useState(false);
+  const [copiedPrompt, setCopiedPrompt] = useState(false);
+  const [copiedNegativePrompt, setCopiedNegativePrompt] = useState(false);
   const { deleteImage, saving: gallerySaving } = useGalleryStorage();
 
   const selectedTheme = settings?.theme ?? "light";
@@ -291,6 +294,36 @@ const ImageScreen = () => {
     }
   }, [record, sharingImage]);
 
+  const handleCopyPrompt = useCallback(async () => {
+    if (!record?.prompt) {
+      return;
+    }
+
+    try {
+      await Clipboard.setStringAsync(record.prompt);
+      setCopiedPrompt(true);
+      setTimeout(() => setCopiedPrompt(false), 2000);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to copy prompt.";
+      Alert.alert("Copy failed", message);
+    }
+  }, [record?.prompt]);
+
+  const handleCopyNegativePrompt = useCallback(async () => {
+    if (!negativePrompt) {
+      return;
+    }
+
+    try {
+      await Clipboard.setStringAsync(negativePrompt);
+      setCopiedNegativePrompt(true);
+      setTimeout(() => setCopiedNegativePrompt(false), 2000);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to copy negative prompt.";
+      Alert.alert("Copy failed", message);
+    }
+  }, [negativePrompt]);
+
   return (
     <SafeAreaView className={`flex-1 ${themePalette.background}`} edges={["top", "bottom"]}>
       <StatusBar style={isDarkTheme ? "light" : "dark"} />
@@ -351,16 +384,48 @@ const ImageScreen = () => {
           </View>
 
           <View className="px-6 mt-8">
-            <Text className={`text-xs font-semibold uppercase tracking-[0.25em] ${themePalette.textMuted}`}>Prompt</Text>
-            <Text className={`mt-3 text-base leading-7 ${themePalette.textPrimary}`}>{record.prompt}</Text>
+            <View className="flex-row items-center justify-between mb-3">
+              <Text className={`text-xs font-semibold uppercase tracking-[0.25em] ${themePalette.textMuted}`}>Prompt</Text>
+              <Pressable
+                onPress={handleCopyPrompt}
+                className={`flex-row items-center gap-1.5 px-3 py-1.5 rounded-full ${themePalette.surface} ${themePalette.border} border`}
+                accessibilityLabel="Copy prompt"
+              >
+                <Ionicons 
+                  name={copiedPrompt ? "checkmark" : "copy-outline"} 
+                  size={14} 
+                  color={copiedPrompt ? "#10b981" : (isDarkTheme ? "#a78bfa" : "#7c3aed")}
+                />
+                <Text className={`text-xs font-medium ${copiedPrompt ? "text-emerald-500" : themePalette.textSecondary}`}>
+                  {copiedPrompt ? "Copied!" : "Copy"}
+                </Text>
+              </Pressable>
+            </View>
+            <Text className={`text-base leading-7 ${themePalette.textPrimary}`}>{record.prompt}</Text>
           </View>
 
           {negativePrompt && (
             <View className="px-6 mt-6">
-              <Text className={`text-xs font-semibold uppercase tracking-[0.25em] ${themePalette.textMuted}`}>
-                Negative prompt
-              </Text>
-              <Text className={`mt-3 text-sm leading-6 ${themePalette.textSecondary}`}>{negativePrompt}</Text>
+              <View className="flex-row items-center justify-between mb-3">
+                <Text className={`text-xs font-semibold uppercase tracking-[0.25em] ${themePalette.textMuted}`}>
+                  Negative prompt
+                </Text>
+                <Pressable
+                  onPress={handleCopyNegativePrompt}
+                  className={`flex-row items-center gap-1.5 px-3 py-1.5 rounded-full ${themePalette.surface} ${themePalette.border} border`}
+                  accessibilityLabel="Copy negative prompt"
+                >
+                  <Ionicons 
+                    name={copiedNegativePrompt ? "checkmark" : "copy-outline"} 
+                    size={14} 
+                    color={copiedNegativePrompt ? "#10b981" : (isDarkTheme ? "#a78bfa" : "#7c3aed")}
+                  />
+                  <Text className={`text-xs font-medium ${copiedNegativePrompt ? "text-emerald-500" : themePalette.textSecondary}`}>
+                    {copiedNegativePrompt ? "Copied!" : "Copy"}
+                  </Text>
+                </Pressable>
+              </View>
+              <Text className={`text-sm leading-6 ${themePalette.textSecondary}`}>{negativePrompt}</Text>
             </View>
           )}
 
