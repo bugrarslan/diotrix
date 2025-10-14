@@ -823,7 +823,7 @@ export default function CreateImageModal() {
                   <Ionicons name="sparkles" size={18} color="#ffffff" />
                 )}
                 <Text className="text-base font-semibold text-white">
-                  {isGenerating || savingImage ? "Generating…" : "Generate with Imagen"}
+                  {isGenerating || savingImage ? "Generating…" : "Generate Image"}
                 </Text>
               </View>
             </Pressable>
