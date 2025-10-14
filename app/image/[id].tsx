@@ -473,7 +473,7 @@ const ImageScreen = () => {
 
       <Modal visible={fullscreenVisible} transparent animationType="fade" onRequestClose={handleCloseFullscreen}>
         <GestureHandlerRootView className="flex-1">
-          <SafeAreaView className="flex-1 bg-black" edges={["top"]}>
+          <View className="flex-1 pt-12 bg-black">
             {/* Header */}
             <View className="flex-row items-center justify-between px-6 py-4">
                 <Pressable
@@ -503,7 +503,7 @@ const ImageScreen = () => {
                 >
                   {/* <Ionicons name="ellipsis-horizontal" size={24} color="#ffffff" /> */}
                 </Pressable>
-              </View>
+            </View>
 
               {/* Image Container */}
               <View className="items-center justify-center flex-1">
@@ -568,7 +568,7 @@ const ImageScreen = () => {
                 <Text className="text-xs text-white/80">Share</Text>
               </Pressable>
             </View>
-          </SafeAreaView>
+          </View>
         </GestureHandlerRootView>
       </Modal>
     </SafeAreaView>
