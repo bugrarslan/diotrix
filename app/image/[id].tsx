@@ -408,7 +408,7 @@ const ImageScreen = () => {
 
       <Modal visible={fullscreenVisible} transparent animationType="fade" onRequestClose={handleCloseFullscreen}>
         <GestureHandlerRootView className="flex-1">
-          <SafeAreaView className="flex-1 bg-black" edges={["top", "bottom"]}>
+          <SafeAreaView className="flex-1 bg-black" edges={["top"]}>
             {/* Header */}
             <View className="flex-row items-center justify-between px-6 py-4">
                 <Pressable
@@ -471,15 +471,13 @@ const ImageScreen = () => {
 
             {/* Bottom Action Bar */}
             <View className="flex-row items-center justify-around px-6 py-6 bg-black border-t border-white/10">
-              
-
               <Pressable
                 onPress={handleSaveToDevice}
                 disabled={savingToDevice}
                 className={`items-center justify-center ${savingToDevice ? "opacity-50" : ""}`}
                 accessibilityLabel="Save to device"
               >
-                <View className="items-center justify-center w-12 h-12 mb-1 bg-white/10 rounded-2xl">
+                <View className="items-center justify-center w-12 h-12 mb-1 rounded-2xl bg-primary-600">
                   {savingToDevice ? (
                     <ActivityIndicator size="small" color="#ffffff" />
                   ) : (
@@ -495,7 +493,7 @@ const ImageScreen = () => {
                 className={`items-center justify-center ${sharingImage ? "opacity-50" : ""}`}
                 accessibilityLabel="Share image"
               >
-                <View className="items-center justify-center w-12 h-12 mb-1 bg-white/10 rounded-2xl">
+                <View className="items-center justify-center w-12 h-12 mb-1 rounded-2xl bg-primary-600">
                   {sharingImage ? (
                     <ActivityIndicator size="small" color="#ffffff" />
                   ) : (
