@@ -1,352 +1,280 @@
-# Diotrix: AI Art Generator
+# **Diotrix: AI Art Generator**
 
-## 📄 Overview
+**AI-Powered Image Generation Mobile App** built with React Native, Expo, and TypeScript. It transforms text prompts into stunning artwork using Google's Gemini Imagen API.  
+**Diotrix** is a creative mobile application that features a freemium monetization model via RevenueCat, with an option for users to input their own Gemini API key for unrestricted use. All generated images are stored locally, ensuring an offline-first experience.
 
-**Diotrix** is a creative AI art generation mobile application built with **React Native**, **Expo**, and **TypeScript**. The app leverages **Google Gemini's Image Generation API** to produce unique visuals from user prompts and parameters such as resolution, aspect ratio, style, and guidance scale. Diotrix features a freemium monetization model via RevenueCat, with the option for users to input their own Gemini API key for unrestricted use.
+## **📖 Table of Contents**
 
-**Why this application?**
+* 🎯 Overview  
+* ✨ Features  
+* 🛠 Tech Stack  
+* 🏗 Architecture  
+* 📁 Project Structure  
+* 🎨 Design Patterns  
+* 🚀 Key Implementation Details  
+* 🔧 Development Setup  
+* 📦 Building & Deployment  
+* 📄 License  
+* 📞 Support
 
-1. Demonstrate expertise in React Native, Expo, and TypeScript.
-2. Showcase AI-driven visual generation using Gemini's capabilities.
-3. Implement freemium monetization with RevenueCat and optional API key access.
-4. Build an elegant, local-first creative app architecture.
-5. Deliver an intuitive UX for AI image generation and gallery management.
-6. Apply modern styling with NativeWind and a dynamic theme system.
+## **🎯 Overview**
 
----
+### **Key Objectives**
 
-## 🎯 Core Features
+* **AI-First Experience**: Seamless integration with Google Gemini Imagen API for state-of-the-art image generation.  
+* **Local-First Architecture**: All generated images and metadata stored locally for offline access and privacy.  
+* **Flexible Monetization**: Freemium model with trial credits, Pro subscriptions, and a bring-your-own-API-key option.  
+* **Cross-Platform**: Single codebase for both iOS and Android using Expo's managed workflow.  
+* **Type Safety**: Full TypeScript implementation across the entire codebase for robust development.
 
-### 1. **Prompt-Based Image Generation**
+### **Project Metadata**
 
-- User inputs prompt and selects image generation parameters:
-  - Resolution
-  - Aspect ratio
-  - Style presets (e.g., realistic, digital art, watercolor)
-  - Guidance scale and other Gemini-supported parameters
-- Gemini Image Generation API used exclusively for AI output.
-- Real-time progress feedback and error handling.
+* **Version**: 0.7.0  
+* **Platform**: iOS, Android  
+* **Framework**: React Native (0.81.4) \+ Expo (SDK 54\)  
+* **Language**: TypeScript 5.9+  
+* **Bundle ID**: com.bugrarslan.diotrix
 
-### 2. **Gallery Management**
+## **✨ Features**
 
-- **Local Gallery Tab** displaying generated images with metadata:
-  - Prompt text
-  - Image parameters (style, aspect ratio, etc.)
-  - Creation date
-- **Image Actions**:
-  - Save to device
-  - Delete
-  - View details or regenerate with same prompt
-- Gallery data persisted via SQLite.
+### **🖼️ AI Image Generation**
 
-### 3. **Subscription & Monetization System**
+* **Text-to-Image**: Generate images from natural language prompts using Gemini Imagen 4.0.  
+* **Customizable Parameters**:  
+  * **Aspect Ratios**: 1:1, 3:4, 4:3, 16:9, 9:16  
+  * **Image Sizes**: 1K, 2K resolution options  
+  * **Guidance Scale**: Control adherence to the prompt (1-10)  
+  * **Negative Prompts**: Specify elements to avoid in the generation.  
+* **Real-time Progress**: Visual feedback during the generation process.  
+* **Error Handling**: Comprehensive error states with clear messages and retry mechanisms.
 
-- **Freemium Model**: Free users have limited daily generations.
-- **Pro Tier (RevenueCat Integration)**: Unlimited generations and priority access.
-- **Custom API Key Option**: Users can enter their own Gemini API key to bypass subscription limits.
-- **Promotion Screen**:
-  - Feature comparison and benefits highlight
-  - Native RevenueCat purchase flow
-  - Secure App Store / Play Store billing
+### **🗂️ Local Gallery Management**
 
-### 4. **Comprehensive Settings**
+* **Masonry Grid Layout**: A responsive and high-performance FlashList-powered gallery.  
+* **Full-Screen Viewer**: Pinch-to-zoom image viewer with gesture controls.  
+* **Detailed Metadata**: View the original prompt, parameters, and creation timestamp for each image.  
+* **Image Operations**: Save to device, delete from the gallery, and share via the system share sheet.  
+* **Persistent Storage**: SQLite database for metadata combined with the local FileSystem for image files.
 
-- **Settings Tab** featuring:
-  - API key management (AsyncStorage persistence)
-  - Subscription management (via RevenueCat)
-  - Theme configuration (light/dark)
-  - Data management controls (clear gallery, reset app)
-  - App information, version, and support links
+### **💳 Monetization & Access Control**
 
-### 5. **Conditional Access Control**
+* **Trial System**: New users receive 5 free generation credits.  
+* **Pro Subscription**: Unlimited generations via RevenueCat for a recurring fee.  
+* **Custom API Key**: Users can bring their own Gemini API key for unlimited access, bypassing subscriptions.  
+* **Access Flow**: The app intelligently checks for a custom key, then a Pro subscription, and finally trial credits before showing the promotion screen.  
+* **Subscription Management**: Native iOS/Android purchase, restoration, and management flows.
 
-1. Check for custom API key → Allow image generation.
-2. Check for Pro subscription → Allow image generation.
-3. Neither available → Redirect to promotion screen.
+### **⚙️ Settings & Customization**
 
----
+* **Theme System**: Light & Dark mode with automatic detection of system preference.  
+* **API Key Management**: Securely enter and store a custom Gemini API key locally.  
+* **Data Management**: Options to clear the entire gallery or reset the app to its initial state.  
+* **Subscription Controls**: View subscription status, restore purchases, and manage the current plan.
 
-## 🧮 Tech Stack & Architecture
+## **🛠 Tech Stack**
 
-### **Core Technologies**
+| Category | Technology | Purpose |
+| :---- | :---- | :---- |
+| **Core Framework** | React Native 0.81.4, Expo SDK 54, TypeScript | Cross-platform development and type safety |
+| **Navigation & Routing** | Expo Router | File-based routing for native apps |
+| **State Management** | React Context API, Custom Hooks | Global state for settings and subscriptions |
+| **AI & API Integration** | @google/genai (Gemini Imagen 4.0) | AI image generation from text prompts |
+| **Storage & Persistence** | Expo SQLite, Expo FileSystem, AsyncStorage | Metadata, image files, and user preferences |
+| **Monetization** | react-native-purchases (RevenueCat) | In-app subscriptions and purchase management |
+| **UI Components & Styling** | NativeWind, Tailwind CSS, @shopify/flash-list | Modern styling and high-performance lists |
+| **Media & Permissions** | Expo Media Library, Expo Haptics, Expo Image | Saving files, tactile feedback, optimized images |
+| **Developer Experience** | ESLint, Prettier, Expo Dev Client | Code quality, formatting, and custom builds |
 
-1. **React Native + Expo + TypeScript**
+## **🏗 Architecture**
 
-   - Expo SDK 51+
-   - File-based navigation via Expo Router
-   - Functional components with React Hooks
-   - TypeScript for static typing and safety
+Diotrix follows a **feature-based, layered architecture** with a clear separation of concerns to ensure maintainability and scalability.  
+┌─────────────────────────────────────────────┐  
+│           Presentation Layer                │  
+│  (Screens, Components, Navigation)          │  
+└─────────────────┬───────────────────────────┘  
+                  │  
+┌─────────────────▼───────────────────────────┐  
+│         Application Layer                   │  
+│  (Context Providers, Custom Hooks)          │  
+└─────────────────┬───────────────────────────┘  
+                  │  
+┌─────────────────▼───────────────────────────┐  
+│           Service Layer                     │  
+│  (AI, Database, Storage, AsyncStorage)      │  
+└─────────────────┬───────────────────────────┘  
+                  │  
+┌─────────────────▼───────────────────────────┐  
+│           Data Layer                        │  
+│  (SQLite, FileSystem, AsyncStorage)         │  
+└─────────────────────────────────────────────┘
 
-2. **Database & Storage**
+### **Layer Responsibilities**
 
-   - **Expo SQLite**: Stores metadata for generated images (prompt, parameters, URI)
-   - **Expo FileSystem**: Stores generated image files locally
-   - **AsyncStorage**: Persists user API key and app preferences
-   - Offline-first persistence and retrieval architecture
+* **Presentation Layer (app/, components/)**: Renders UI, handles user input, and navigates between screens.  
+* **Application Layer (context/, hooks/)**: Manages global state (e.g., settings, subscription status) and encapsulates business logic.  
+* **Service Layer (services/)**: Abstracts external communications and data operations (e.g., calling the Gemini API, querying the database).  
+* **Data Layer**: The underlying storage mechanisms, including the SQLite database, local file system, and AsyncStorage.
 
-3. **Subscription & Monetization**
+## **📁 Project Structure**
 
-   - **RevenueCat (react-native-purchases)** integration
-   - Free tier with generation limits
-   - Pro tier with unlimited generations
-   - API key-based access control
+diotrix/  
+├── app/                          \# Expo Router screens  
+│   ├── \_layout.tsx               \# Root layout with context providers  
+│   ├── index.tsx                 \# Entry/splash screen  
+│   ├── (tabs)/                   \# Tab navigation group  
+│   │   ├── \_layout.tsx           \# Tab layout configuration  
+│   │   ├── home.tsx              \# Gallery/creation screen  
+│   │   └── settings.tsx          \# Settings screen  
+│   ├── createImageModal.tsx      \# Image generation modal  
+│   ├── promotionScreen.tsx       \# Subscription upsell screen  
+│   └── image/\[id\].tsx            \# Dynamic image detail screen  
+├── assets/                       \# Static resources (images, icons, fonts)  
+├── components/                   \# Reusable UI components  
+├── context/                      \# React Context providers for global state  
+├── hooks/                        \# Custom React hooks for stateful logic  
+├── services/                     \# Business logic and API integration layer  
+├── utils/                        \# Utility functions  
+├── app.json                      \# Expo configuration file  
+├── tailwind.config.js            \# NativeWind styling configuration  
+├── tsconfig.json                 \# TypeScript configuration  
+└── package.json                  \# Project dependencies and scripts
 
-4. **AI Integration**
+### **File Naming Conventions**
 
-   - **Google Gemini Image Generation API**
-   - Custom prompt construction and parameter handling
-   - Custom API key support for power users
-   - Advanced error handling and fallback responses
+* **Screens**: camelCase.tsx (e.g., onboardingScreen.tsx)  
+* **Components**: PascalCase.tsx (e.g., BackgroundStars.tsx)  
+* **Hooks**: use\*.ts (e.g., useGalleryStorage.ts)  
+* **Services**: \*Service.ts (e.g., databaseService.ts)
 
-5. **Native Components & UI**
+## **🎨 Design Patterns**
 
-   - **NativeWind** for Tailwind-like styling
-   - **Expo Haptics** for tactile feedback
-   - **Expo StatusBar** for adaptive theming
-   - Reusable UI components for prompt forms and galleries
+* **Context \+ Hook Pattern**: Global state (settings, subscriptions) is managed in a React Context and consumed cleanly via custom hooks (useSettingsContext).  
+* **Service Layer Pattern**: Data operations (API calls, database queries) are abstracted into service modules to decouple them from the UI.  
+* **Repository Pattern**: Custom hooks like useGalleryStorage act as repositories, orchestrating calls between different services (e.g., saving an image to the file system and then writing its metadata to the database).  
+* **Optimistic UI Pattern**: For actions like deleting an image, the UI updates immediately for a fluid user experience, and then rolls back only if the underlying operation fails.  
+* **Singleton Pattern**: The database connection is initialized once and reused throughout the app's lifecycle to conserve resources.
 
-6. **State Management & Architecture**
-
-   - **React Context API** for Settings and Subscription states
-   - **Custom Hooks** (`useSettingsStorage`, `useGalleryStorage`)
-   - Strongly typed models for prompts, images, and user settings
-
-### **Project Structure**
-
-```
-diotrix/
-├── app/
-│   ├── _layout.tsx
-│   ├── index.tsx
-│   ├── (tabs)/
-│   │   ├── home.tsx
-│   │   └── settings.tsx
-│   ├── image/
-│   │   └── [id].tsx
-│   ├── createImageModal.tsx
-│   ├── promotionScreen.tsx
-│   └── onboardingScreen.tsx
-├── components/
-│   └── ui/
-│       └── PromptInput.tsx
-├── context/
-│   ├── SettingsContext.tsx
-│   └── SubscriptionContext.tsx
-├── hooks/
-│   ├── useSettingsStorage.ts
-│   └── useGalleryStorage.ts
-├── services/
-│   ├── aiService.ts
-│   ├── asyncStorage.ts
-│   ├── databaseService.ts
-│   └── types.ts
-├── utils/
-│   └── buildPrompt.ts
-├── assets/
-│   └── images/...
-├── global.css
-├── tailwind.config.js
-└── tsconfig.json
-```
-
----
-
-## 🚀 Key Implementation Details
+## **🚀 Key Implementation Details**
 
 ### **Database Schema**
 
-```sql
-CREATE TABLE images (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  uri TEXT NOT NULL,
-  prompt TEXT NOT NULL,
-  parameters TEXT,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+A simple schema is used to store image metadata, while the image files themselves are stored on the file system.  
+CREATE TABLE IF NOT EXISTS generated\_images (  
+  id INTEGER PRIMARY KEY AUTOINCREMENT,  
+  uri TEXT NOT NULL,  
+  prompt TEXT NOT NULL,  
+  metadata TEXT, \-- JSON string with generation parameters  
+  created\_at TEXT NOT NULL DEFAULT (datetime('now'))  
 );
-```
 
-Images are saved in Expo FileSystem; SQLite stores only metadata and references.
+CREATE INDEX IF NOT EXISTS idx\_created\_at ON generated\_images(created\_at DESC);
 
-### **AI Generation Flow**
+### **AI Service Implementation**
 
-1. **Pre-checks**: Validate API key or subscription.
-2. **Prompt Input**: User enters text and selects parameters.
-3. **API Call**: Request sent to Gemini Image Generation endpoint.
-4. **Response Handling**: Display generated image, handle errors.
-5. **Persistence**: Save file via FileSystem, metadata via SQLite.
-6. **Feedback**: Haptic response and success toast.
+* **API Endpoint**: Google Gemini Imagen 4.0 (imagen-4.0-generate-001).  
+* **Flow**:  
+  1. The client constructs a request with the user's prompt and parameters.  
+  2. The service sends the request to the Gemini endpoint.  
+  3. On success, it receives base64-encoded image data.  
+  4. The data is saved to the local file system.  
+  5. The file's URI and other metadata are stored in the SQLite database.  
+* **Error Handling**: The service handles invalid API keys, rate limits (with exponential backoff), network errors, and content policy violations gracefully.
 
-### **Subscription Flow**
+### **Subscription & Access Control Flow**
 
-```typescript
-const handleGenerateImage = async () => {
-  const hasApiKey = settings?.geminiApiKey?.trim();
-
-  if (!hasApiKey) {
-    const customerInfo = await Purchases.getCustomerInfo();
-    const hasPro = !!customerInfo.entitlements.active["Diotrix Pro"];
-
-    if (!hasPro) {
-      router.push("/promotionScreen");
-      return;
-    }
+The logic to determine if a user can generate an image is centralized and follows a clear priority order.  
+const canGenerateImage \= async (): Promise\<boolean\> \=\> {  
+  // 1\. Check for a custom API key first.  
+  if (settings?.aiApiKey?.trim()) {  
+    return true;  
   }
 
-  // Proceed with generation logic...
+  // 2\. Check for an active Pro subscription via RevenueCat.  
+  const customerInfo \= await Purchases.getCustomerInfo();  
+  if (customerInfo.entitlements.active\["Diotrix Pro"\]) {  
+    return true;  
+  }
+
+  // 3\. Check for remaining trial credits.  
+  if (settings?.isTrialVersion && (settings?.remainingCredits ?? 0\) \> 0\) {  
+    return true;  
+  }
+
+  // 4\. If none of the above, user cannot generate.  
+  return false;  
 };
-```
 
-### **Navigation Structure**
-
-```tsx
-<Stack screenOptions={{ headerShown: false }}>
-  <Stack.Screen name="index" />
-  <Stack.Screen name="onboardingScreen" />
-  <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-  <Stack.Screen name="createImageModal" />
-  <Stack.Screen name="promotionScreen" />
-</Stack>
-
-<Tabs screenOptions={{
-  headerShown: false,
-  tabBarActiveTintColor: Colors.primary,
-}}>
-  <Tabs.Screen name="home" options={{ title: 'Create', tabBarIcon: ({ color }) => <Ionicons name="sparkles" color={color} /> }} />
-  <Tabs.Screen name="settings" options={{ title: 'Settings', tabBarIcon: ({ color }) => <Ionicons name="settings" color={color} /> }} />
-</Tabs>
-```
-
----
-
-## 🎨 Design System
-
-### **Color Palette** (`tailwind.config.js`)
-
-```javascript
-module.exports = {
-  theme: {
-    extend: {
-      colors: {
-        primary: {
-          50: '#f5f3ff',
-          500: '#8b5cf6',
-          600: '#7c3aed',
-          900: '#4c1d95',
-        },
-        background: {
-          light: '#ffffff',
-          dark: '#0f0f10',
-        }
-      }
-    }
-  }
-}
-```
-
-### **Reusable Components**
-
-- `PromptInput`: Structured input for prompt and parameters.
-- `GalleryCard`: Displays image thumbnail and metadata.
-- `PromotionCTA`: Upsell component for subscription upgrade.
-- `ThemeSwitch`: Toggle for dark/light mode.
-
----
-
-## 📱 User Experience Flow
-
-### **First-Time Experience**
-
-1. App checks for existing settings or API key.
-2. Onboarding introduces Diotrix’s AI art capabilities.
-3. Redirects to Home tab for prompt-based creation.
-
-### **Image Creation Flow**
-
-1. Check API key or subscription status.
-2. Input prompt and parameters.
-3. Generate image using Gemini API.
-4. Display result with save/regenerate options.
-5. Store image reference in SQLite.
-
-### **Gallery Flow**
-
-1. View all generated images.
-2. Open image details (prompt + parameters).
-3. Regenerate or delete stored images.
-
-### **Settings & Monetization**
-
-1. Manage Gemini API key.
-2. Upgrade to Pro for unlimited generations.
-3. Configure theme (dark/light).
-4. Manage stored data and preferences.
-
----
-
-## 🔧 Development Setup
+## **🔧 Development Setup**
 
 ### **Prerequisites**
 
-- Node.js 18+
-- Expo CLI (latest)
-- Google Gemini API key (optional)
-- RevenueCat account for subscription setup
+* Node.js 18+  
+* Expo CLI (npm install \-g expo-cli)  
+* Xcode (for iOS on macOS) / Android Studio (for Android)
 
 ### **Installation**
 
-```bash
-npm install
-```
+1. **Clone the repository:**  
+   git clone \[https://github.com/bugrarslan/diotrix.git\](https://github.com/bugrarslan/diotrix.git)  
+   cd diotrix
 
-### **Environment Setup**
+2. **Install dependencies:**  
+   npm install
 
-Create `.env` file:
+### **Environment Configuration**
 
-```env
-EXPO_PUBLIC_GEMINI_API_KEY=your_gemini_key_here
-EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY=your_android_key
-EXPO_PUBLIC_REVENUECAT_APPLE_API_KEY=your_ios_key
-```
+Create a .env file in the project root to store your API keys:  
+\# Google Gemini API Key (optional, can be added in-app)  
+EXPO\_PUBLIC\_GEMINI\_API\_KEY=your\_gemini\_api\_key\_here
+
+\# RevenueCat API Keys (required for subscription features)  
+EXPO\_PUBLIC\_REVENUECAT\_IOS\_KEY=your\_ios\_key\_here  
+EXPO\_PUBLIC\_REVENUECAT\_ANDROID\_KEY=your\_android\_key\_here
 
 ### **Running the App**
 
-```bash
-npx expo start
-```
+* **Using Expo Go (for quick previews, some native features may not work):**  
+  npx expo start
 
-### **Building for Production**
+* **Using a Development Build (Recommended for full functionality):**  
+  \# For iOS  
+  npx expo run:ios
 
-```bash
-eas build --profile production --platform all
-```
+  \# For Android  
+  npx expo run:android
 
----
+## **📦 Building & Deployment**
 
-## 🔹 Technical Evaluation
+This project uses **Expo Application Services (EAS)** for building and deploying.
 
-| Feature Category           | Implementation                             |   |
-| -------------------------- | ------------------------------------------ | - |
-| **TypeScript Integration** | Strong typing across contexts and services | ✅ |
-| **Database Architecture**  | SQLite metadata + FileSystem for images    | ✅ |
-| **Subscription System**    | RevenueCat Freemium + API key fallback     | ✅ |
-| **AI Integration**         | Gemini Image Generation API only           | ✅ |
-| **UI/UX Design**           | NativeWind styling, theme system           | ✅ |
-| **State Management**       | Context API + custom hooks                 | ✅ |
-| **Security**               | Local API key storage via AsyncStorage     | ✅ |
-| **Performance**            | Optimized caching and local rendering      | ✅ |
+### **Prerequisites**
 
----
+1. Install EAS CLI: npm install \-g eas-cli  
+2. Login to your Expo account: eas login
 
-## 🌟 Production Readiness
+### **Build Command**
 
-- ✅ Complete local-first architecture
-- ✅ RevenueCat monetization system
-- ✅ Gemini AI image generation integration
-- ✅ Theme system (dark/light)
-- ✅ Offline gallery storage
-- ✅ Subscription and API key control
+Run the following command to build for production:  
+\# Build for both iOS and Android  
+eas build \--profile production \--platform all
 
-Diotrix empowers users to unleash creativity through AI-generated visuals, blending cutting-edge Gemini technology with a sleek, mobile-first experience.
+\# Build for a specific platform  
+eas build \--platform ios
 
+### **Submission to Stores**
 
-test
+Once the build is complete, you can submit it to the app stores:  
+eas submit \--platform ios
+
+## **📄 License**
+
+This project is proprietary software. All rights reserved.  
+© 2025 Bugra Arslan
+
+## **📞 Support**
+
+For questions or issues, please open an issue on the GitHub repository:
+
+* **GitHub Issues**: [github.com/bugrarslan/diotrix/issues](https://github.com/bugrarslan/diotrix/issues)
+
+**Built with ❤️ using React Native, Expo, and Google Gemini.**
