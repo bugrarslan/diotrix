@@ -497,12 +497,7 @@ const ImageScreen = () => {
                   </Text>
                 </View>
 
-                <Pressable
-                  className="items-center justify-center w-10 h-10"
-                  accessibilityLabel="More options"
-                >
-                  {/* <Ionicons name="ellipsis-horizontal" size={24} color="#ffffff" /> */}
-                </Pressable>
+                <View className="items-center justify-center w-10 h-10"/>
             </View>
 
               {/* Image Container */}

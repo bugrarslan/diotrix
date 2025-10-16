@@ -219,7 +219,7 @@ export const generateImage = async (options: GenerateImageOptions): Promise<Gene
   const primaryAsset = assets[0];
 
   if (!primaryAsset) {
-    throw new Error("There is a problem with the generated image. Try adjusting the prompt or parameters.");
+    throw new Error("The image can not be generated. Try adjusting the prompt or parameters.");
   }
 
   return {

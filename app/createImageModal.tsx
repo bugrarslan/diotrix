@@ -47,6 +47,8 @@ type PersonGenerationOption = "dont_allow" | "allow_adult";
 const accordionSections = ["prompt", "aspect", "style", "guidance", "output"] as const;
 type AccordionSection = (typeof accordionSections)[number];
 
+type GenerationMode = "basic" | "advanced";
+
 const aspectRatios: AspectRatioOption[] = [
   { id: "1:1", label: "1 : 1", description: "Balanced for social and gallery tiles." },
   { id: "3:4", label: "3 : 4", description: "Ideal for posters, covers, and portraits." },
@@ -253,6 +255,7 @@ export default function CreateImageModal() {
     () => (isDarkTheme ? "rgba(248,250,252,0.65)" : "rgba(15,23,42,0.45)"),
     [isDarkTheme]
   );
+  const [generationMode, setGenerationMode] = useState<GenerationMode>("basic");
   const [prompt, setPrompt] = useState("");
   const [negativePrompt, setNegativePrompt] = useState("");
   const [selectedAspect, setSelectedAspect] = useState<AspectRatioOption["id"] | null>(null);
@@ -307,34 +310,11 @@ export default function CreateImageModal() {
     }
 
     if (!prompt.trim()) {
-      showValidationError("Please describe what you’d like to create before generating.");
+      showValidationError("Please describe what you'd like to create before generating.");
       return;
     }
 
-    if (!selectedAspect) {
-      showValidationError("Select an aspect ratio before generating.");
-      return;
-    }
-
-    if (!selectedStyle) {
-      showValidationError("Choose a style preset before generating.");
-      return;
-    }
-
-    if (!selectedGuidance) {
-      showValidationError("Choose a guidance scale before generating.");
-      return;
-    }
-
-    if (!imageSize) {
-      showValidationError("Pick an output size before generating.");
-      return;
-    }
-
-    if (!personGeneration) {
-      showValidationError("Choose a people generation policy before generating.");
-      return;
-    }
+    // No validation for optional fields - they're all optional now!
 
     const trimmedUserKey = settings.aiApiKey?.trim() ?? "";
     const remainingCredits = settings.remainingCredits ?? 0;
@@ -367,42 +347,38 @@ export default function CreateImageModal() {
     setIsGenerating(true);
 
     try {
-      const aspectRatioValue = aspectRatioValueMap[selectedAspect];
-      if (!aspectRatioValue) {
-        showValidationError("Select a valid aspect ratio before generating.");
-        setIsGenerating(false);
-        return;
+      // Build parameters based on what's selected
+      let aspectRatioValue: ImagenAspectRatio | undefined;
+      if (selectedAspect) {
+        aspectRatioValue = aspectRatioValueMap[selectedAspect];
       }
 
-      const guidancePreset = guidancePresets.find((item) => item.id === selectedGuidance);
-      if (!guidancePreset) {
-        showValidationError("Choose a valid guidance scale before generating.");
-        setIsGenerating(false);
-        return;
+      let guidancePreset: GuidancePreset | undefined;
+      if (selectedGuidance) {
+        guidancePreset = guidancePresets.find((item) => item.id === selectedGuidance);
       }
 
-      const stylePreset = stylePresets.find((preset) => preset.id === selectedStyle);
-      if (!stylePreset) {
-        showValidationError("Choose a valid style preset before generating.");
-        setIsGenerating(false);
-        return;
+      let stylePreset: StylePreset | undefined;
+      if (selectedStyle) {
+        stylePreset = stylePresets.find((preset) => preset.id === selectedStyle);
       }
 
+      // Build prompt with optional style
       const { positive, negative } = buildPrompt({
         prompt,
-        negativePrompt,
-        style: { name: stylePreset.name, tagline: stylePreset.tagline },
-        extras: [`Guidance scale ${guidancePreset.value.toFixed(1)}`],
+        negativePrompt: negativePrompt.trim() || undefined,
+        style: stylePreset ? { name: stylePreset.name, tagline: stylePreset.tagline } : undefined,
+        extras: guidancePreset ? [`Guidance scale ${guidancePreset.value.toFixed(1)}`] : undefined,
       });
 
       const result = await generateImage({
         prompt: positive,
-        negativePrompt: negative,
+        negativePrompt: negative && negative.trim() ? negative : undefined,
         aspectRatio: aspectRatioValue,
-        guidanceScale: guidancePreset.value,
+        guidanceScale: guidancePreset?.value,
         numberOfImages: 1,
-        imageSize,
-        personGeneration,
+        imageSize: imageSize || undefined,
+        personGeneration: personGeneration || undefined,
         apiKey: apiKeyOverride,
       });
 
@@ -416,16 +392,16 @@ export default function CreateImageModal() {
         fileName: asset.fileName,
         metadata: {
           aspectRatio: aspectRatioValue,
-          guidanceScale: guidancePreset.value,
+          guidanceScale: guidancePreset?.value,
           model: result.metadata.model,
           extras: {
-            styleId: stylePreset.id,
-            styleName: stylePreset.name,
-            styleTagline: stylePreset.tagline,
+            styleId: stylePreset?.id,
+            styleName: stylePreset?.name,
+            styleTagline: stylePreset?.tagline,
             imageSize,
             personGeneration,
             negativePrompt: negative ?? null,
-            guidancePrompt: `Guidance scale ${guidancePreset.value.toFixed(1)}`,
+            guidancePrompt: guidancePreset ? `Guidance scale ${guidancePreset.value.toFixed(1)}` : null,
           },
         },
       });
@@ -446,17 +422,20 @@ export default function CreateImageModal() {
 
       router.replace({ pathname: "/image/[id]", params: { id: String(record.id) } });
     } catch (error) {
+      let errorMessage = "An unexpected error occurred while generating the image.";
+      
       if (error instanceof InvalidApiKeyError) {
-        setErrorMessage(error.message);
-        Alert.alert("API key error", error.message);
+        errorMessage = "The provided API key appears to be invalid. Please check your settings.";
       } else if (error instanceof Error) {
-        setErrorMessage(error.message);
-        Alert.alert("Generation failed", error.message);
-      } else {
-        const fallback = "An unexpected error occurred while generating the image.";
-        setErrorMessage(fallback);
-        Alert.alert("Generation failed", fallback);
+        // Replace Gemini/Imagen references with Diotrix
+        errorMessage = error.message
+          .replace(/gemini/gi, "Diotrix")
+          .replace(/imagen/gi, "Diotrix")
+          .replace(/google/gi, "Diotrix");
       }
+      
+      setErrorMessage(errorMessage);
+      Alert.alert("Generation failed", errorMessage);
     } finally {
       setIsGenerating(false);
     }
@@ -476,26 +455,61 @@ export default function CreateImageModal() {
     isPro,
     updateSettings,
     showValidationError,
+    generationMode,
   ]);
 
   return (
     <SafeAreaView className={`flex-1 ${themePalette.background}`}>
       <StatusBar style={isDarkTheme ? "light" : "dark"} />
       <BackgroundStars />
-      <View className="flex-row items-center justify-between px-6 pt-6">
-        <Pressable
-          onPress={handleClose}
-          className={`flex-row items-center gap-2 px-4 py-2 border rounded-full ${themePalette.border} ${themePalette.surface}`}
-        >
-          <Ionicons name="close" size={16} color={isDarkTheme ? "#f8fafc" : "#0f172a"} />
-          <Text className={`text-xs font-semibold uppercase tracking-[0.2em] ${themePalette.textSecondary}`}>
-            Close
+      <View className="px-6 pt-6">
+        <View className="flex-row items-center justify-between">
+          <Pressable
+            onPress={handleClose}
+            className={`flex-row items-center gap-2 px-4 py-2 border rounded-full ${themePalette.border} ${themePalette.surface}`}
+          >
+            <Ionicons name="close" size={16} color={isDarkTheme ? "#f8fafc" : "#0f172a"} />
+            <Text className={`text-xs font-semibold uppercase tracking-[0.2em] ${themePalette.textSecondary}`}>
+              Close
+            </Text>
+          </Pressable>
+          <Text className={`text-xs font-semibold tracking-[0.35em] ${themePalette.textMuted}`}>
+            PROMPT STUDIO
           </Text>
-        </Pressable>
-        <Text className={`text-xs font-semibold tracking-[0.35em] ${themePalette.textMuted}`}>
-          PROMPT STUDIO
-        </Text>
-        <View className="w-24" />
+          <View className="w-24" />
+        </View>
+
+        {/* Mode Tabs */}
+        <View className={`flex-row gap-2 mt-6 p-1 border rounded-full ${themePalette.border} ${themePalette.surface}`}>
+          <Pressable
+            onPress={() => setGenerationMode("basic")}
+            className={`flex-1 py-3 rounded-full ${
+              generationMode === "basic" ? "bg-primary-500" : "bg-transparent"
+            }`}
+          >
+            <Text
+              className={`text-sm font-semibold text-center ${
+                generationMode === "basic" ? "text-white" : themePalette.textSecondary
+              }`}
+            >
+              Basic
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={() => setGenerationMode("advanced")}
+            className={`flex-1 py-3 rounded-full ${
+              generationMode === "advanced" ? "bg-primary-500" : "bg-transparent"
+            }`}
+          >
+            <Text
+              className={`text-sm font-semibold text-center ${
+                generationMode === "advanced" ? "text-white" : themePalette.textSecondary
+              }`}
+            >
+              Advanced
+            </Text>
+          </Pressable>
+        </View>
       </View>
 
       <ScrollView
@@ -514,7 +528,7 @@ export default function CreateImageModal() {
               <View className="flex-1 pr-4">
                 <Text className={`text-base font-semibold ${themePalette.textPrimary}`}>Bring your vision to life</Text>
                 <Text className={`mt-2 text-sm leading-6 ${themePalette.textSecondary}`}>
-                  Describe the scene, specify the ambience, and Diotrix will orchestrate Gemini to build a masterpiece. Combine guidance scale, aspect ratio, and style to fine-tune the result.
+                  Describe the scene, specify the ambience, and Diotrix will build a masterpiece{generationMode === "advanced" ? ". Combine guidance scale, aspect ratio, and style to fine-tune the result" : ""}.
                 </Text>
               </View>
               <Ionicons
@@ -536,71 +550,35 @@ export default function CreateImageModal() {
                   className={`mt-2 min-h-[120px] rounded-2xl border ${themePalette.border} ${themePalette.surface} px-4 py-4 text-base ${themePalette.textPrimary}`}
                 />
 
-                <Text className={`mt-6 text-xs font-semibold tracking-[0.25em] ${themePalette.textMuted}`}>
-                  NEGATIVE PROMPT
-                </Text>
-                <TextInput
-                  value={negativePrompt}
-                  onChangeText={setNegativePrompt}
-                  placeholder="Details to avoid: low contrast, text artifacts, distorted anatomy"
-                  placeholderTextColor={negativePlaceholderColor}
-                  multiline
-                  className={`mt-2 min-h-[80px] rounded-2xl border ${themePalette.border} ${themePalette.surface} px-4 py-4 text-base ${themePalette.textPrimary}`}
-                />
+                {generationMode === "advanced" && (
+                  <>
+                    <Text className={`mt-6 text-xs font-semibold tracking-[0.25em] ${themePalette.textMuted}`}>
+                      NEGATIVE PROMPT <Text className={`${themePalette.textMuted} font-normal`}>(Optional)</Text>
+                    </Text>
+                    <TextInput
+                      value={negativePrompt}
+                      onChangeText={setNegativePrompt}
+                      placeholder="Details to avoid: low contrast, text artifacts, distorted anatomy"
+                      placeholderTextColor={negativePlaceholderColor}
+                      multiline
+                      className={`mt-2 min-h-[80px] rounded-2xl border ${themePalette.border} ${themePalette.surface} px-4 py-4 text-base ${themePalette.textPrimary}`}
+                    />
+                  </>
+                )}
               </View>
             )}
           </View>
 
-          {/* Aspect Ratio Section */}
-          <View className={`p-6 mt-8 border rounded-3xl ${themePalette.border} ${themePalette.card}`}>
-            <Pressable
-              onPress={() => toggleSection("aspect")}
-              className="flex-row items-center justify-between"
-            >
-              <View className="flex-1 pr-4">
-                <Text className={`text-base font-semibold ${themePalette.textPrimary}`}>Aspect ratio</Text>
-                <Text className={`mt-2 text-sm ${themePalette.textSecondary}`}>
-                  Choose how your canvas will appear in the local gallery, exports, and sharing.
-                </Text>
-              </View>
-              <Ionicons
-                name={expandedSections.aspect ? "chevron-up" : "chevron-down"}
-                size={18}
-                color={mutedIconColor}
-              />
-            </Pressable>
-            {expandedSections.aspect && (
-              <View className="flex-row flex-wrap gap-2 mt-4">
-                {aspectRatios.map((ratio) => {
-                  const isActive = ratio.id === selectedAspect;
-                  return (
-                    <Pressable
-                      key={ratio.id}
-                      onPress={() => setSelectedAspect(ratio.id)}
-                      className={`rounded-full border px-4 py-2 ${
-                        isActive ? "border-primary-500 bg-primary-500/30" : `${themePalette.border} ${themePalette.surface}`
-                      }`}
-                    >
-                      {/* <View className="flex-row items-center gap-2"> */}
-                        <Text className={`text-sm font-semibold ${themePalette.textPrimary}`}>{ratio.label}</Text>
-                        {/* {isActive && <Ionicons name="checkmark" size={14} color="#c4b5fd" />} */}
-                      {/* </View> */}
-                      {/* <Text className="mt-1 text-[11px] text-white/60">{ratio.description}</Text> */}
-                    </Pressable>
-                  );
-                })}
-              </View>
-            )}
-          </View>
-
-          {/* Style Preset Section */}
+          {/* Style Preset Section (Always visible in both modes) */}
           <View className={`p-6 mt-8 border rounded-3xl ${themePalette.border} ${themePalette.card}`}>
             <Pressable
               onPress={() => toggleSection("style")}
               className="flex-row items-center justify-between"
             >
               <View className="flex-1 pr-4">
-                <Text className={`text-base font-semibold ${themePalette.textPrimary}`}>Style presets</Text>
+                <Text className={`text-base font-semibold ${themePalette.textPrimary}`}>
+                  Style presets <Text className={`${themePalette.textMuted} font-normal text-sm`}>(Optional)</Text>
+                </Text>
                 <Text className={`mt-2 text-sm ${themePalette.textSecondary}`}>
                   Swap between curated looks to jump-start mood and palette. Refine further in the prompt.
                 </Text>
@@ -623,7 +601,7 @@ export default function CreateImageModal() {
                         if (isLocked) {
                           router.push("/promotionModal");
                         } else {
-                          setSelectedStyle(preset.id);
+                          setSelectedStyle(isActive ? null : preset.id);
                         }
                       }}
                       className={`w-[30%] items-center rounded-3xl border px-3 py-4 ${
@@ -650,156 +628,205 @@ export default function CreateImageModal() {
             )}
           </View>
 
-          {/* Guidance Scale Section */}
-          <View className={`p-6 mt-8 border rounded-3xl ${themePalette.border} ${themePalette.card}`}>
-            <Pressable
-              onPress={() => toggleSection("guidance")}
-              className="flex-row items-center justify-between"
-            >
-              <View className="flex-1 pr-4">
-                <Text className={`text-base font-semibold ${themePalette.textPrimary}`}>Guidance scale</Text>
-                <Text className={`mt-2 text-sm ${themePalette.textSecondary}`}>
-                  Steer how closely Gemini follows the prompt. Balanced works for most concepts.
-                </Text>
+          {/* Advanced Mode Sections */}
+          {generationMode === "advanced" && (
+            <>
+              {/* Aspect Ratio Section */}
+              <View className={`p-6 mt-8 border rounded-3xl ${themePalette.border} ${themePalette.card}`}>
+                <Pressable
+                  onPress={() => toggleSection("aspect")}
+                  className="flex-row items-center justify-between"
+                >
+                  <View className="flex-1 pr-4">
+                    <Text className={`text-base font-semibold ${themePalette.textPrimary}`}>
+                      Aspect ratio <Text className={`${themePalette.textMuted} font-normal text-sm`}>(Optional)</Text>
+                    </Text>
+                    <Text className={`mt-2 text-sm ${themePalette.textSecondary}`}>
+                      Choose how your canvas will appear in the local gallery, exports, and sharing.
+                    </Text>
+                  </View>
+                  <Ionicons
+                    name={expandedSections.aspect ? "chevron-up" : "chevron-down"}
+                    size={18}
+                    color={mutedIconColor}
+                  />
+                </Pressable>
+                {expandedSections.aspect && (
+                  <View className="flex-row flex-wrap gap-2 mt-4">
+                    {aspectRatios.map((ratio) => {
+                      const isActive = ratio.id === selectedAspect;
+                      return (
+                        <Pressable
+                          key={ratio.id}
+                          onPress={() => setSelectedAspect(isActive ? null : ratio.id)}
+                          className={`rounded-full border px-4 py-2 ${
+                            isActive ? "border-primary-500 bg-primary-500/30" : `${themePalette.border} ${themePalette.surface}`
+                          }`}
+                        >
+                          <Text className={`text-sm font-semibold ${themePalette.textPrimary}`}>{ratio.label}</Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                )}
               </View>
-              <Ionicons
-                name={expandedSections.guidance ? "chevron-up" : "chevron-down"}
-                size={18}
-                color={mutedIconColor}
-              />
-            </Pressable>
-            {expandedSections.guidance && (
-                <View className="gap-3 mt-4 space-y-3">
-                  {guidancePresets.map((preset) => {
-                    const isActive = preset.id === selectedGuidance;
-                    const isLocked = !isPro && !freeGuidanceIds.includes(preset.id);
-                    return (
-                      <Pressable
-                        key={preset.id}
-                        onPress={() => {
-                          if (isLocked) {
-                            router.push("/promotionModal");
-                          } else {
-                            setSelectedGuidance(preset.id);
-                          }
-                        }}
-                        className={`flex-row items-center justify-between rounded-2xl border px-4 py-4 ${
-                          isActive ? "border-primary-500 bg-primary-500/20" : `${themePalette.border} ${themePalette.surface}`
-                        } ${isLocked ? "opacity-60" : ""}`}
-                      >
-                        <View className="flex-row items-center flex-1 gap-2">
-                          {isLocked && (
-                            <View className="p-1 rounded-full bg-primary-500">
-                              <Ionicons name="star" size={10} color="#ffffff" />
-                            </View>
-                          )}
-                          <View className="flex-1">
-                            <Text className={`text-sm font-semibold ${themePalette.textPrimary}`}>{preset.label}</Text>
-                            <Text className={`mt-1 text-xs ${themePalette.textSecondary}`}>{preset.description}</Text>
-                          </View>
-                        </View>
-                        <Text className={`text-sm font-semibold ${themePalette.textPrimary}`}>{preset.value.toFixed(1)}</Text>
-                      </Pressable>
-                    );
-                  })}
-                </View>
-            )}
-          </View>
 
-          {/* Output Settings Section */}
-          <View className={`p-6 mt-8 border rounded-3xl ${themePalette.border} ${themePalette.card}`}>
-            <Pressable
-              onPress={() => toggleSection("output")}
-              className="flex-row items-center justify-between"
-            >
-              <View className="flex-1 pr-4">
-                <Text className={`text-base font-semibold ${themePalette.textPrimary}`}>Output settings</Text>
-                <Text className={`mt-2 text-sm ${themePalette.textSecondary}`}>
-                  Tune output resolution and whether people can appear in your render.
-                </Text>
+              {/* Guidance Scale Section */}
+              <View className={`p-6 mt-8 border rounded-3xl ${themePalette.border} ${themePalette.card}`}>
+                <Pressable
+                  onPress={() => toggleSection("guidance")}
+                  className="flex-row items-center justify-between"
+                >
+                  <View className="flex-1 pr-4">
+                    <Text className={`text-base font-semibold ${themePalette.textPrimary}`}>
+                      Guidance scale <Text className={`${themePalette.textMuted} font-normal text-sm`}>(Optional)</Text>
+                    </Text>
+                    <Text className={`mt-2 text-sm ${themePalette.textSecondary}`}>
+                      Steer how closely Diotrix follows the prompt. Balanced works for most concepts.
+                    </Text>
+                  </View>
+                  <Ionicons
+                    name={expandedSections.guidance ? "chevron-up" : "chevron-down"}
+                    size={18}
+                    color={mutedIconColor}
+                  />
+                </Pressable>
+                {expandedSections.guidance && (
+                  <View className="gap-3 mt-4 space-y-3">
+                    {guidancePresets.map((preset) => {
+                      const isActive = preset.id === selectedGuidance;
+                      const isLocked = !isPro && !freeGuidanceIds.includes(preset.id);
+                      return (
+                        <Pressable
+                          key={preset.id}
+                          onPress={() => {
+                            if (isLocked) {
+                              router.push("/promotionModal");
+                            } else {
+                              setSelectedGuidance(isActive ? null : preset.id);
+                            }
+                          }}
+                          className={`flex-row items-center justify-between rounded-2xl border px-4 py-4 ${
+                            isActive ? "border-primary-500 bg-primary-500/20" : `${themePalette.border} ${themePalette.surface}`
+                          } ${isLocked ? "opacity-60" : ""}`}
+                        >
+                          <View className="flex-row items-center flex-1 gap-2">
+                            {isLocked && (
+                              <View className="p-1 rounded-full bg-primary-500">
+                                <Ionicons name="star" size={10} color="#ffffff" />
+                              </View>
+                            )}
+                            <View className="flex-1">
+                              <Text className={`text-sm font-semibold ${themePalette.textPrimary}`}>{preset.label}</Text>
+                              <Text className={`mt-1 text-xs ${themePalette.textSecondary}`}>{preset.description}</Text>
+                            </View>
+                          </View>
+                          <Text className={`text-sm font-semibold ${themePalette.textPrimary}`}>{preset.value.toFixed(1)}</Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                )}
               </View>
-              <Ionicons
-                name={expandedSections.output ? "chevron-up" : "chevron-down"}
-                size={18}
-                color={mutedIconColor}
-              />
-            </Pressable>
 
-            {expandedSections.output && (
-              <View className="gap-6">
-                <View className="gap-3 mt-4 space-y-3">
-                  {imageSizeOptions.map((option) => {
-                    const isActive = option.id === imageSize;
-                    const isLocked = !isPro && !freeImageSizeIds.includes(option.id);
-                    return (
-                      <Pressable
-                        key={option.id}
-                        onPress={() => {
-                          if (isLocked) {
-                            router.push("/promotionModal");
-                          } else {
-                            setImageSize(option.id);
-                          }
-                        }}
-                        className={`flex-row items-center justify-between rounded-2xl border px-4 py-4 ${
-                          isActive ? "border-primary-500 bg-primary-500/20" : `${themePalette.border} ${themePalette.surface}`
-                        } ${isLocked ? "opacity-60" : ""}`}
-                      >
-                        <View className="flex-row items-center flex-1 gap-2">
-                          {isLocked && (
-                            <View className="p-1 rounded-full bg-primary-500">
-                              <Ionicons name="star" size={10} color="#ffffff" />
-                            </View>
-                          )}
-                          <View className="flex-1">
-                            <Text className={`text-sm font-semibold ${themePalette.textPrimary}`}>{option.label}</Text>
-                            <Text className={`mt-1 text-xs ${themePalette.textSecondary}`}>{option.description}</Text>
-                          </View>
-                        </View>
-                      </Pressable>
-                    );
-                  })}
-                </View>
+              {/* Output Settings Section */}
+              <View className={`p-6 mt-8 border rounded-3xl ${themePalette.border} ${themePalette.card}`}>
+                <Pressable
+                  onPress={() => toggleSection("output")}
+                  className="flex-row items-center justify-between"
+                >
+                  <View className="flex-1 pr-4">
+                    <Text className={`text-base font-semibold ${themePalette.textPrimary}`}>
+                      Output settings <Text className={`${themePalette.textMuted} font-normal text-sm`}>(Optional)</Text>
+                    </Text>
+                    <Text className={`mt-2 text-sm ${themePalette.textSecondary}`}>
+                      Tune output resolution and whether people can appear in your render.
+                    </Text>
+                  </View>
+                  <Ionicons
+                    name={expandedSections.output ? "chevron-up" : "chevron-down"}
+                    size={18}
+                    color={mutedIconColor}
+                  />
+                </Pressable>
 
-                <View className="gap-3 space-y-3">
-                  {personPolicies.map((policy) => {
-                    const isActive = policy.id === personGeneration;
-                    const isLocked = !isPro && !freePersonGenerationIds.includes(policy.id);
-                    return (
-                      <Pressable
-                        key={policy.id}
-                        onPress={() => {
-                          if (isLocked) {
-                            router.push("/promotionModal");
-                          } else {
-                            setPersonGeneration(policy.id);
-                          }
-                        }}
-                        className={`flex-row items-center justify-between rounded-2xl border px-4 py-4 ${
-                          isActive ? "border-primary-500 bg-primary-500/20" : `${themePalette.border} ${themePalette.surface}`
-                        } ${isLocked ? "opacity-60" : ""}`}
-                      >
-                        <View className="flex-row items-center flex-1 gap-2">
-                          {isLocked && (
-                            <View className="p-1 rounded-full bg-primary-500">
-                              <Ionicons name="star" size={10} color="#ffffff" />
+                {expandedSections.output && (
+                  <View className="gap-6">
+                    <View className="gap-3 mt-4 space-y-3">
+                      {imageSizeOptions.map((option) => {
+                        const isActive = option.id === imageSize;
+                        const isLocked = !isPro && !freeImageSizeIds.includes(option.id);
+                        return (
+                          <Pressable
+                            key={option.id}
+                            onPress={() => {
+                              if (isLocked) {
+                                router.push("/promotionModal");
+                              } else {
+                                setImageSize(isActive ? null : option.id);
+                              }
+                            }}
+                            className={`flex-row items-center justify-between rounded-2xl border px-4 py-4 ${
+                              isActive ? "border-primary-500 bg-primary-500/20" : `${themePalette.border} ${themePalette.surface}`
+                            } ${isLocked ? "opacity-60" : ""}`}
+                          >
+                            <View className="flex-row items-center flex-1 gap-2">
+                              {isLocked && (
+                                <View className="p-1 rounded-full bg-primary-500">
+                                  <Ionicons name="star" size={10} color="#ffffff" />
+                                </View>
+                              )}
+                              <View className="flex-1">
+                                <Text className={`text-sm font-semibold ${themePalette.textPrimary}`}>{option.label}</Text>
+                                <Text className={`mt-1 text-xs ${themePalette.textSecondary}`}>{option.description}</Text>
+                              </View>
                             </View>
-                          )}
-                          <View className="flex-1">
-                            <Text className={`text-sm font-semibold ${themePalette.textPrimary}`}>{policy.label}</Text>
-                            <Text className={`mt-1 text-xs ${themePalette.textSecondary}`}>{policy.description}</Text>
-                          </View>
-                        </View>
-                      </Pressable>
-                    );
-                  })}
-                </View>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+
+                    <View className="gap-3 space-y-3">
+                      {personPolicies.map((policy) => {
+                        const isActive = policy.id === personGeneration;
+                        const isLocked = !isPro && !freePersonGenerationIds.includes(policy.id);
+                        return (
+                          <Pressable
+                            key={policy.id}
+                            onPress={() => {
+                              if (isLocked) {
+                                router.push("/promotionModal");
+                              } else {
+                                setPersonGeneration(isActive ? null : policy.id);
+                              }
+                            }}
+                            className={`flex-row items-center justify-between rounded-2xl border px-4 py-4 ${
+                              isActive ? "border-primary-500 bg-primary-500/20" : `${themePalette.border} ${themePalette.surface}`
+                            } ${isLocked ? "opacity-60" : ""}`}
+                          >
+                            <View className="flex-row items-center flex-1 gap-2">
+                              {isLocked && (
+                                <View className="p-1 rounded-full bg-primary-500">
+                                  <Ionicons name="star" size={10} color="#ffffff" />
+                                </View>
+                              )}
+                              <View className="flex-1">
+                                <Text className={`text-sm font-semibold ${themePalette.textPrimary}`}>{policy.label}</Text>
+                                <Text className={`mt-1 text-xs ${themePalette.textSecondary}`}>{policy.description}</Text>
+                              </View>
+                            </View>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  </View>
+                )}
               </View>
-            )}
-          </View>
+            </>
+          )}
 
           {/* Generate Button & Error Message */}
-          <View className="mt-10 space-y-4">
+          <View className="gap-6 mt-10 space-y-4">
             {errorMessage && (
               <View className="px-4 py-3 border rounded-2xl border-red-500/30 bg-red-500/10">
                 <Text className="text-xs font-semibold uppercase tracking-[0.25em] text-red-200">
