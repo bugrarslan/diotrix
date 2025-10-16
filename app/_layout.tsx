@@ -12,6 +12,7 @@ import { Stack, useRouter } from "expo-router";
 import { useEffect, useRef } from "react";
 import { Platform } from "react-native";
 import Purchases from "react-native-purchases";
+import * as Haptics from "expo-haptics";
 
 function RootNavigator() {
   const router = useRouter();
@@ -64,6 +65,9 @@ function RootNavigator() {
 
   const configureRevenueCat = async () => {
     try {
+      // Haptic feedback: Start loading
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
       let apiKey: string | undefined;
 
       if (Platform.OS === "ios") {
@@ -101,9 +105,15 @@ function RootNavigator() {
 
       hasConfiguredPurchasesRef.current = true;
       console.log(`RevenueCat configured successfully for ${Platform.OS}`);
+
+      // Haptic feedback: Success
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (error) {
       console.error("Failed to configure RevenueCat:", error);
       hasConfiguredPurchasesRef.current = true; // Mark as attempted to avoid infinite retries
+      
+      // Haptic feedback: Error
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     }
   };
 
