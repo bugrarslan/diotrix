@@ -15,34 +15,25 @@ import Purchases from "react-native-purchases";
 
 function RootNavigator() {
   const router = useRouter();
-  const { loading: settingsLoading, shouldShowOnboarding, updateSettings, settings } =
-    useSettingsContext();
+  const {
+    loading: settingsLoading,
+    shouldShowOnboarding,
+    updateSettings,
+    settings,
+  } = useSettingsContext();
   const { loading: subscriptionLoading, isPro } = useSubscriptionContext();
   const previousTargetRef = useRef<string | null>(null);
   const hasConfiguredPurchasesRef = useRef(false);
-
-  useEffect(() => {
-    if (hasConfiguredPurchasesRef.current || Platform.OS !== "ios") {
-      return;
-    }
-
-    if (!process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY) {
-      console.log("RevenueCat Apple API Key is not set in environment variables.");
-      hasConfiguredPurchasesRef.current = true;
-      return;
-    }
-
-    try {
-      Purchases.configure({
-        apiKey: process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY,
-      });
-      hasConfiguredPurchasesRef.current = true;
-    } catch (error) {
-      console.error("Failed to configure Purchases:", error);
-    }
-  }, []);
-
   const isTrialVersion = settings?.isTrialVersion ?? true;
+
+  // Configure RevenueCat for both iOS and Android
+  useEffect(() => {
+    if (hasConfiguredPurchasesRef.current) {
+      return;
+    }
+
+    void configureRevenueCat();
+  }, []);
 
   useEffect(() => {
     if (settingsLoading || subscriptionLoading) {
@@ -70,6 +61,51 @@ function RootNavigator() {
     updateSettings,
     isTrialVersion,
   ]);
+
+  const configureRevenueCat = async () => {
+    try {
+      let apiKey: string | undefined;
+
+      if (Platform.OS === "ios") {
+        apiKey = process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY;
+        if (!apiKey) {
+          console.warn(
+            "RevenueCat iOS API Key is not set in environment variables."
+          );
+          hasConfiguredPurchasesRef.current = true;
+          return;
+        }
+      } else if (Platform.OS === "android") {
+        apiKey = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY;
+        if (!apiKey) {
+          console.warn(
+            "RevenueCat Android API Key is not set in environment variables."
+          );
+          hasConfiguredPurchasesRef.current = true;
+          return;
+        }
+      } else {
+        // Web or other platforms - skip configuration
+        hasConfiguredPurchasesRef.current = true;
+        return;
+      }
+
+      Purchases.configure({
+        apiKey,
+      });
+
+      // Set debug logs in development
+      if (__DEV__) {
+        Purchases.setLogLevel(Purchases.LOG_LEVEL.DEBUG);
+      }
+
+      hasConfiguredPurchasesRef.current = true;
+      console.log(`RevenueCat configured successfully for ${Platform.OS}`);
+    } catch (error) {
+      console.error("Failed to configure RevenueCat:", error);
+      hasConfiguredPurchasesRef.current = true; // Mark as attempted to avoid infinite retries
+    }
+  };
 
   return (
     <Stack screenOptions={{ headerShown: false }}>

@@ -13,16 +13,16 @@ stored locally, ensuring an offline-first experience.
 
 ## 📖 Table of Contents
 
--   🎯 Overview\
--   ✨ Features\
--   🛠 Tech Stack\
--   🏗 Architecture\
--   📁 Project Structure\
--   🎨 Design Patterns\
--   🚀 Key Implementation Details\
--   🔧 Development Setup\
--   📦 Building & Deployment\
--   📄 License\
+-   🎯 Overview
+-   ✨ Features
+-   🛠 Tech Stack
+-   🏗 Architecture
+-   📁 Project Structure
+-   🎨 Design Patterns
+-   🚀 Key Implementation Details
+-   🔧 Development Setup
+-   📦 Building & Deployment
+-   📄 License
 -   📞 Support
 
 ------------------------------------------------------------------------
@@ -32,22 +32,22 @@ stored locally, ensuring an offline-first experience.
 ### Key Objectives
 
 -   **AI-First Experience:** Seamless integration with Google Gemini
-    Imagen API for state-of-the-art image generation.\
+    Imagen API for state-of-the-art image generation.
 -   **Local-First Architecture:** All generated images and metadata
-    stored locally for offline access and privacy.\
+    stored locally for offline access and privacy.
 -   **Flexible Monetization:** Freemium model with trial credits, Pro
-    subscriptions, and a bring-your-own-API-key option.\
+    subscriptions, and a bring-your-own-API-key option.
 -   **Cross-Platform:** Single codebase for both iOS and Android using
-    Expo's managed workflow.\
+    Expo's managed workflow.
 -   **Type Safety:** Full TypeScript implementation across the entire
     codebase for robust development.
 
 ### Project Metadata
 
--   **Version:** 0.7.0\
--   **Platform:** iOS, Android\
--   **Framework:** React Native (0.81.4) + Expo (SDK 54)\
--   **Language:** TypeScript 5.9+\
+-   **Version:** 0.7.0
+-   **Platform:** iOS, Android
+-   **Framework:** React Native (0.81.4) + Expo (SDK 54)
+-   **Language:** TypeScript 5.9+
 -   **Bundle ID:** com.bugrarslan.diotrix
 
 ------------------------------------------------------------------------
@@ -57,52 +57,52 @@ stored locally, ensuring an offline-first experience.
 ### 🖼️ AI Image Generation
 
 -   **Text-to-Image:** Generate images from natural language prompts
-    using Gemini Imagen 4.0.\
+    using Gemini Imagen 4.0.
 -   **Customizable Parameters:**
-    -   Aspect Ratios: 1:1, 3:4, 4:3, 16:9, 9:16\
-    -   Image Sizes: 1K, 2K resolution options\
-    -   Guidance Scale: Control adherence to the prompt (1--10)\
-    -   Negative Prompts: Specify elements to avoid in the generation.\
+    -   Aspect Ratios: 1:1, 3:4, 4:3, 16:9, 9:16
+    -   Image Sizes: 1K, 2K resolution options
+    -   Guidance Scale: Control adherence to the prompt (1--10)
+    -   Negative Prompts: Specify elements to avoid in the generation.
 -   **Real-time Progress:** Visual feedback during the generation
-    process.\
+    process.
 -   **Error Handling:** Comprehensive error states with clear messages
     and retry mechanisms.
 
 ### 🗂️ Local Gallery Management
 
 -   Masonry Grid Layout: A responsive and high-performance
-    FlashList-powered gallery.\
+    FlashList-powered gallery.
 -   Full-Screen Viewer: Pinch-to-zoom image viewer with gesture
-    controls.\
+    controls.
 -   Detailed Metadata: View the original prompt, parameters, and
-    creation timestamp for each image.\
+    creation timestamp for each image.
 -   Image Operations: Save to device, delete from the gallery, and share
-    via the system share sheet.\
+    via the system share sheet.
 -   Persistent Storage: SQLite database for metadata combined with the
     local FileSystem for image files.
 
 ### 💳 Monetization & Access Control
 
--   **Trial System:** New users receive 5 free generation credits.\
+-   **Trial System:** New users receive 5 free generation credits.
 -   **Pro Subscription:** Unlimited generations via RevenueCat for a
-    recurring fee.\
+    recurring fee.
 -   **Custom API Key:** Users can bring their own Gemini API key for
-    unlimited access, bypassing subscriptions.\
--   **Access Flow:**\
+    unlimited access, bypassing subscriptions.
+-   **Access Flow:**
     The app intelligently checks for a custom key, then a Pro
     subscription, and finally trial credits before showing the promotion
-    screen.\
+    screen.
 -   **Subscription Management:** Native iOS/Android purchase,
     restoration, and management flows.
 
 ### ⚙️ Settings & Customization
 
 -   Theme System: Light & Dark mode with automatic detection of system
-    preference.\
+    preference.
 -   API Key Management: Securely enter and store a custom Gemini API key
-    locally.\
+    locally.
 -   Data Management: Options to clear the entire gallery or reset the
-    app to its initial state.\
+    app to its initial state.
 -   Subscription Controls: View subscription status, restore purchases,
     and manage the current plan.
 
@@ -178,11 +178,11 @@ separation of concerns to ensure maintainability and scalability.
 ### Layer Responsibilities
 
 -   **Presentation Layer (app/, components/):** Renders UI, handles user
-    input, and navigates between screens.\
+    input, and navigates between screens.
 -   **Application Layer (context/, hooks/):** Manages global state and
-    encapsulates business logic.\
+    encapsulates business logic.
 -   **Service Layer (services/):** Handles API calls and data
-    operations.\
+    operations.
 -   **Data Layer:** Manages the underlying storage mechanisms (SQLite,
     FileSystem, AsyncStorage).
 
@@ -212,9 +212,9 @@ separation of concerns to ensure maintainability and scalability.
     ├── tsconfig.json
     └── package.json
 
-**File Naming Conventions** - Screens: `camelCase.tsx`\
-- Components: `PascalCase.tsx`\
-- Hooks: `use*.ts`\
+**File Naming Conventions** - Screens: `camelCase.tsx`
+- Components: `PascalCase.tsx`
+- Hooks: `use*.ts`
 - Services: `*Service.ts`
 
 ------------------------------------------------------------------------
@@ -222,12 +222,12 @@ separation of concerns to ensure maintainability and scalability.
 ## 🎨 Design Patterns
 
 -   **Context + Hook Pattern:** Global state management through Context
-    API and custom hooks.\
--   **Service Layer Pattern:** Decouples UI from data logic.\
+    API and custom hooks.
+-   **Service Layer Pattern:** Decouples UI from data logic.
 -   **Repository Pattern:** Custom hooks orchestrate between storage and
-    UI layers.\
+    UI layers.
 -   **Optimistic UI Pattern:** Immediate UI updates for better UX with
-    rollback on failure.\
+    rollback on failure.
 -   **Singleton Pattern:** Shared database connection reused app-wide.
 
 ------------------------------------------------------------------------
@@ -252,10 +252,10 @@ CREATE INDEX IF NOT EXISTS idx_created_at ON generated_images(created_at DESC);
 
 **API Endpoint:** Google Gemini Imagen 4.0 (`imagen-4.0-generate-001`).
 
-**Flow:** 1. Construct request with prompt and parameters.\
-2. Send to Gemini endpoint.\
-3. Receive base64 image data.\
-4. Save to local file system.\
+**Flow:** 1. Construct request with prompt and parameters.
+2. Send to Gemini endpoint.
+3. Receive base64 image data.
+4. Save to local file system.
 5. Store metadata in SQLite.
 
 Handles invalid keys, rate limits, and network errors gracefully.
@@ -278,8 +278,8 @@ const canGenerateImage = async (): Promise<boolean> => {
 
 ### Prerequisites
 
--   Node.js 18+\
--   Expo CLI\
+-   Node.js 18+
+-   Expo CLI
 -   Xcode / Android Studio
 
 ### Installation
@@ -324,15 +324,15 @@ eas submit --platform ios
 
 ## 📄 License
 
-This project is proprietary software.\
-All rights reserved.\
+This project is proprietary software.
+All rights reserved.
 © 2025 Bugra Arslan
 
 ------------------------------------------------------------------------
 
 ## 📞 Support
 
-For issues or feedback:\
+For issues or feedback:
 **GitHub Issues:**
 [github.com/bugrarslan/diotrix/issues](https://github.com/bugrarslan/diotrix/issues)
 

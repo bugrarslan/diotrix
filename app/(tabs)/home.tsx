@@ -103,7 +103,7 @@ export default function HomeScreen() {
           Ready to create?
         </Text>
         <Text className={`mt-3 text-sm ${themePalette.textSecondary}`}>
-          Spin up a new Imagen prompt or revisit your latest gallery entries below.
+          Spin up a new Diotrix prompt or revisit your latest gallery entries below.
         </Text>
         <Pressable
           onPress={handleLaunchCreate}
@@ -154,7 +154,7 @@ export default function HomeScreen() {
               Create your first image
             </Text>
             <Text className={`mt-2 text-sm leading-6 text-center ${themePalette.textSecondary}`}>
-              Unlock your personal gallery by generating a fresh concept with Imagen.
+              Unlock your personal gallery by generating a fresh concept with Diotrix.
             </Text>
             <Pressable
               onPress={handleLaunchCreate}

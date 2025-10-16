@@ -715,7 +715,7 @@ export default function CreateImageModal() {
               <View className="flex-1 pr-4">
                 <Text className={`text-base font-semibold ${themePalette.textPrimary}`}>Output settings</Text>
                 <Text className={`mt-2 text-sm ${themePalette.textSecondary}`}>
-                  Tune Imagen&apos;s output resolution and whether people can appear in your render.
+                  Tune output resolution and whether people can appear in your render.
                 </Text>
               </View>
               <Ionicons

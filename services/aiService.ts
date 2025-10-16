@@ -40,7 +40,7 @@ export interface GenerateImageOptions {
 }
 
 export class InvalidApiKeyError extends Error {
-  constructor(message = "The provided Google Imagen API key appears to be invalid.") {
+  constructor(message = "The provided Google Ai Studio API key appears to be invalid.") {
     super(message);
     this.name = "InvalidApiKeyError";
   }
@@ -97,7 +97,7 @@ const resolveApiKey = (override?: string | null): string => {
 
   if (!envKey) {
     throw new Error(
-      "Missing Google Imagen API key. Set EXPO_PUBLIC_GOOGLE_AI_KEY (or EXPO_PUBLIC_IMAGEN_API_KEY) in your environment."
+      "Missing Google AI Studio API key. Set EXPO_PUBLIC_GOOGLE_AI_KEY in your environment."
     );
   }
 
@@ -209,7 +209,7 @@ export const generateImage = async (options: GenerateImageOptions): Promise<Gene
       throw error;
     }
 
-    throw new Error("Failed to generate image with Imagen.");
+    throw new Error("Failed to generate image.");
   }
 
   const assets = (response?.generatedImages ?? [])
@@ -219,7 +219,7 @@ export const generateImage = async (options: GenerateImageOptions): Promise<Gene
   const primaryAsset = assets[0];
 
   if (!primaryAsset) {
-    throw new Error("Imagen API returned an empty response. Try adjusting the prompt or parameters.");
+    throw new Error("There is a problem with the generated image. Try adjusting the prompt or parameters.");
   }
 
   return {
