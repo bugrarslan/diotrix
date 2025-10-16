@@ -66,6 +66,16 @@ const generateFileName = (extension: string, explicitName?: string): string => {
   return `diotrix-${uniqueSuffix}.${extension}`;
 };
 
+const getDirectoryAndFile = (
+  fileName: string,
+  directoryName?: string
+): { directory: Directory; file: File } => {
+  const baseDir = resolveBaseDirectory();
+  const galleryDirectory = createDirectory(baseDir, directoryName);
+  const file = new File(galleryDirectory, fileName);
+  return { directory: galleryDirectory, file };
+};
+
 export const saveImageToGallery = async (options: SaveImageOptions): Promise<SaveImageResult> => {
   const { base64Data, extension, fileName, directoryName } = options;
   if (!base64Data) {
@@ -73,12 +83,9 @@ export const saveImageToGallery = async (options: SaveImageOptions): Promise<Sav
   }
 
   const resolvedExtension = sanitizeExtension(extension);
-  const baseDir = resolveBaseDirectory();
-  const galleryDirectory = createDirectory(baseDir, directoryName);
-  ensureDirectoryExists(galleryDirectory);
-
   const resolvedFileName = generateFileName(resolvedExtension, fileName);
-  const file = new File(galleryDirectory, resolvedFileName);
+  const { directory, file } = getDirectoryAndFile(resolvedFileName, directoryName);
+  ensureDirectoryExists(directory);
   file.create({ overwrite: true });
   file.write(base64Data, { encoding: "base64" });
 
@@ -115,5 +122,19 @@ export const clearGalleryDirectory = async (directoryName?: string): Promise<voi
     ensureDirectoryExists(galleryDirectory);
   } catch (error) {
     console.warn("[imageStorage] Failed to clear gallery directory", error);
+  }
+};
+
+export const resolveGalleryFileUri = (fileName: string, directoryName?: string): string => {
+  if (!fileName) {
+    return "";
+  }
+
+  try {
+  const { file } = getDirectoryAndFile(fileName, directoryName);
+    return file.uri;
+  } catch (error) {
+    console.warn("[imageStorage] Failed to resolve gallery file uri", error);
+    return "";
   }
 };
