@@ -1,5 +1,7 @@
 import { deleteDatabaseAsync, openDatabaseAsync, type SQLiteDatabase } from "expo-sqlite";
 
+import { resolveGalleryFileUri } from "./imageStorageService";
+
 const DATABASE_NAME = "diotrix-gallery.db";
 const TABLE_NAME = "generated_images";
 
@@ -24,6 +26,7 @@ export interface ImageMetadata {
 
 export interface ImageRecord {
   id: number;
+  fileName: string;
   uri: string;
   prompt: string;
   metadata: ImageMetadata | null;
@@ -31,13 +34,13 @@ export interface ImageRecord {
 }
 
 export interface CreateImageRecordInput {
-  uri: string;
+  fileName: string;
   prompt: string;
   metadata?: ImageMetadata | null;
 }
 
 export interface UpdateImageRecordInput {
-  uri?: string;
+  fileName?: string;
   prompt?: string;
   metadata?: ImageMetadata | null;
 }
@@ -96,13 +99,42 @@ const serializeMetadata = (metadata?: ImageMetadata | null): string | null => {
   }
 };
 
-const mapRowToRecord = (row: ImageRow): ImageRecord => ({
-  id: row.id,
-  uri: row.uri,
-  prompt: row.prompt,
-  metadata: parseMetadata(row.metadata),
-  createdAt: row.created_at,
-});
+const extractFileName = (value: string | null | undefined): string => {
+  if (!value) {
+    return "";
+  }
+
+  const normalized = value.trim();
+  if (!normalized) {
+    return "";
+  }
+
+  const parts = normalized.split(/[\\/]/);
+  return parts.length > 0 ? parts[parts.length - 1] : normalized;
+};
+
+const mapRowToRecord = (row: ImageRow): ImageRecord => {
+  const storedLocation = row.uri ?? "";
+  const fileName = extractFileName(storedLocation);
+
+  let resolvedUri = "";
+  if (fileName) {
+    try {
+      resolvedUri = resolveGalleryFileUri(fileName);
+    } catch (error) {
+      console.warn("[database] Failed to rebuild image uri", error);
+    }
+  }
+
+  return {
+    id: row.id,
+    fileName,
+    uri: resolvedUri || storedLocation,
+    prompt: row.prompt,
+    metadata: parseMetadata(row.metadata),
+    createdAt: row.created_at,
+  };
+};
 
 const getImageRowById = async (db: SQLiteDatabase, id: number): Promise<ImageRow | null> => {
   const row = await db.getFirstAsync<ImageRow>(
@@ -118,7 +150,7 @@ export const createImageRecord = async (input: CreateImageRecordInput): Promise<
 
   const result = await db.runAsync(
     `INSERT INTO ${TABLE_NAME} (uri, prompt, metadata) VALUES (?, ?, ?);`,
-    [input.uri, input.prompt, serializedMetadata]
+    [input.fileName, input.prompt, serializedMetadata]
   );
 
   return getImageRecordById(result.lastInsertRowId);
@@ -153,9 +185,9 @@ export const updateImageRecord = async (
   const fields: string[] = [];
   const values: (string | number | null)[] = [];
 
-  if (updates.uri !== undefined) {
+  if (updates.fileName !== undefined) {
     fields.push("uri = ?");
-    values.push(updates.uri);
+    values.push(updates.fileName);
   }
 
   if (updates.prompt !== undefined) {

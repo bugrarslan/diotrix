@@ -33,9 +33,9 @@ interface GalleryState {
 
 const toCreateRecordInput = (
   params: SaveGeneratedImageInput,
-  uri: string
+  fileName: string
 ): CreateImageRecordInput => ({
-  uri,
+  fileName,
   prompt: params.prompt,
   metadata: params.metadata ?? null,
 });
@@ -80,13 +80,13 @@ export const useGalleryStorage = () => {
       setState((prev) => ({ ...prev, saving: true, error: null }));
 
       try {
-        const { uri } = await saveImageToGallery({
+        const { fileName: savedFileName } = await saveImageToGallery({
           base64Data: input.base64Data,
           extension: input.extension,
           fileName: input.fileName,
         });
 
-        const record = await createImageRecord(toCreateRecordInput(input, uri));
+        const record = await createImageRecord(toCreateRecordInput(input, savedFileName));
 
         setState((prev) => ({
           ...prev,
