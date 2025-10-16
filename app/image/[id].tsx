@@ -472,10 +472,11 @@ const ImageScreen = () => {
       )}
 
       <Modal visible={fullscreenVisible} transparent animationType="fade" onRequestClose={handleCloseFullscreen}>
+        <SafeAreaView className="flex-1 bg-black" edges={["top"]}>
         <GestureHandlerRootView className="flex-1">
-          <View className="flex-1 pt-12 bg-black">
+          <View className="flex-1 bg-black">
             {/* Header */}
-            <View className="flex-row items-center justify-between px-6 py-4">
+            <View className="flex-row items-center justify-between px-6 py-4 mx-3 rounded-full bg-black/80" style={{ zIndex: 10 }}>
                 <Pressable
                   onPress={handleCloseFullscreen}
                   className="items-center justify-center w-10 h-10"
@@ -500,51 +501,51 @@ const ImageScreen = () => {
                 <View className="items-center justify-center w-10 h-10"/>
             </View>
 
-              {/* Image Container */}
-              <View className="items-center justify-center flex-1">
-                {isResolvingImage || !resolution ? (
-                  <ActivityIndicator size="small" color="#ffffff" />
-                ) : (
-                  (() => {
-                    const containerWidth = windowWidth;
-                    const containerHeight = windowHeight - 180; // leave space for header/footer
-                    const size = fitContainer(resolution.width / resolution.height, {
-                      width: containerWidth,
-                      height: containerHeight,
-                    });
+            {/* Image Container */}
+            <View className="items-center justify-center flex-1">
+              {isResolvingImage || !resolution ? (
+                <ActivityIndicator size="small" color="#ffffff" />
+              ) : (
+                (() => {
+                  const containerWidth = windowWidth;
+                  const containerHeight = windowHeight - 180; // leave space for header/footer
+                  const size = fitContainer(resolution.width / resolution.height, {
+                    width: containerWidth,
+                    height: containerHeight,
+                  });
 
-                    return (
-                      <ResumableZoom maxScale={4}>
-                        <Image
-                          source={{ uri: record?.uri }}
-                          style={{
-                            width: size.width,
-                            height: size.height,
-                          }}
-                          resizeMethod="scale"
-                        />
-                      </ResumableZoom>
-                    );
-                  })()
-                )}
-              </View>
+                  return (
+                    <ResumableZoom maxScale={4}>
+                      <Image
+                        source={{ uri: record?.uri }}
+                        style={{
+                          width: size.width,
+                          height: size.height,
+                        }}
+                        resizeMethod="scale"
+                      />
+                    </ResumableZoom>
+                  );
+                })()
+              )}
+            </View>
 
             {/* Bottom Action Bar */}
-            <View className="flex-row items-center justify-around px-6 py-6 bg-black border-t border-white/10">
+            <View className="flex-row items-center justify-around px-6 py-4 mx-3 mb-3 rounded-full bg-black/80 border-white/10" style={{ zIndex: 10 }}>
               <Pressable
                 onPress={handleSaveToDevice}
                 disabled={savingToDevice}
                 className={`items-center justify-center ${savingToDevice ? "opacity-50" : ""}`}
                 accessibilityLabel="Save to device"
               >
-                <View className="items-center justify-center w-12 h-12 mb-1 rounded-2xl bg-primary-600">
+                <View className="items-center justify-center w-10 h-10 mb-1 rounded-2xl bg-primary-600">
                   {savingToDevice ? (
                     <ActivityIndicator size="small" color="#ffffff" />
                   ) : (
-                    <Ionicons name="download-outline" size={24} color="#ffffff" />
+                    <Ionicons name="download-outline" size={20} color="#ffffff" />
                   )}
                 </View>
-                <Text className="text-xs text-white/80">Save to gallery</Text>
+                <Text className="text-xs text-white/80">Save</Text>
               </Pressable>
 
               <Pressable
@@ -553,11 +554,11 @@ const ImageScreen = () => {
                 className={`items-center justify-center ${sharingImage ? "opacity-50" : ""}`}
                 accessibilityLabel="Share image"
               >
-                <View className="items-center justify-center w-12 h-12 mb-1 rounded-2xl bg-primary-600">
+                <View className="items-center justify-center w-10 h-10 mb-1 rounded-2xl bg-primary-600">
                   {sharingImage ? (
                     <ActivityIndicator size="small" color="#ffffff" />
                   ) : (
-                    <Ionicons name="share-outline" size={24} color="#ffffff" />
+                    <Ionicons name="share-outline" size={20} color="#ffffff" />
                   )}
                 </View>
                 <Text className="text-xs text-white/80">Share</Text>
@@ -565,6 +566,7 @@ const ImageScreen = () => {
             </View>
           </View>
         </GestureHandlerRootView>
+        </SafeAreaView>
       </Modal>
     </SafeAreaView>
   );
